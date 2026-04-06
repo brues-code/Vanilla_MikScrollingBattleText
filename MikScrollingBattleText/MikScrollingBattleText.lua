@@ -113,7 +113,8 @@ ICON_CACHE["morsure fatale"] =					"Interface\\Icons\\ability_backstab"
 ICON_CACHE["explosion sonore"] =				"Interface\\Icons\\spell_shadow_teleport"
 ICON_CACHE["flammes"] =							"Interface\\Icons\\spell_fire_fire"
 ICON_CACHE["effet inferno"] =					"Interface\\Icons\\spell_fire_incinerate"
-
+ICON_CACHE["flametongue attack"] = 				"Interface\\Icons\\Spell_Nature_GuardianWard"
+ICON_CACHE["stratholme holy water"] = 			"Interface\\Icons\\Inv_Potion_75"
 
 -- Cache des spells dont l'icone n'a pas été trouvée
 NO_ICON_CACHE = {}
@@ -1254,30 +1255,30 @@ function MikSBT.UpdateProfiles()
 
   -- Check if the profile was created prior to version 4.0.
   if (profile.CreationVersion < 4.0) then
-  
+
    profile.ShowAllManaGains = false;
    profile.LowHealthSound = true;
    profile.LowManaSound	 = true;
-  
+
    profile.CreationVersion = 4.0;
   end
-  
+
   -- Check if the profile was created prior to version 4.1.
   if (profile.CreationVersion < 4.1) then
-  
+
    if profile.Triggers.MSBT_TRIGGER_WINDFURY then -- Fix Windfury Trigger
 	   profile.Triggers.MSBT_TRIGGER_WINDFURY.TriggerSettings.SearchPatterns[1] = string.format(AURAADDEDSELFHELPFUL, string.gsub(BS["Windfury Totem"], "-", "%%-"))
    end
-   
+
    if profile.Triggers.MSBT_TRIGGER_HAND_OF_JUSTICE then -- Delete Hand of Justice Trigger
 	   profile.Triggers["MSBT_TRIGGER_HAND_OF_JUSTICE"] = nil;
    end
-   
+
    profile.CreationVersion = 4.1;
   end
-  
+
   if (profile.CreationVersion < 4.3) then
-  
+
   -- The pet update !
    profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_DAMAGE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_DAMAGE"]);
    profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_MISS"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_MISS"]);
@@ -1297,17 +1298,34 @@ function MikSBT.UpdateProfiles()
    profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_IMMUNE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_IMMUNE"]);
    profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HEAL"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HEAL"]);
    profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HOT"]);
-   
+
    profile.CreationVersion = 4.3;
   end
-  
+
   if (profile.CreationVersion < 4.4) then
-  
+
 	 profile.BlizzardFontSettings = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.BlizzardFontSettings);
-	 
+
   profile.CreationVersion = 4.4;
   end
-  
+
+  if (profile.CreationVersion < 4.6) then
+    -- Add missing incoming evade/reflect event settings (needed for Nampower events).
+    local incomingMissEvents = {
+      "MSBT_EVENTTYPE_INCOMING_EVADE",
+      "MSBT_EVENTTYPE_INCOMING_SPELL_EVADE",
+      "MSBT_EVENTTYPE_INCOMING_PET_EVADE",
+      "MSBT_EVENTTYPE_INCOMING_PET_SPELL_EVADE",
+      "MSBT_EVENTTYPE_INCOMING_PET_SPELL_REFLECT",
+    };
+  for _, evtName in incomingMissEvents do
+    if not profile.EventSettings[evtName] and MikSBT.DEFAULT_CONFIG.EventSettings[evtName] then
+      profile.EventSettings[evtName] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings[evtName]);
+    end
+    end
+    profile.CreationVersion = 4.6;
+  end
+
  end
 end
 

@@ -3447,21 +3447,23 @@ end
 -- parameters passed.
 -- **********************************************************************************
 function MikCEH.GetUnorderedCaptureDataTable(c1, c2, c3, c4, c5, c6, c7, c8, c9)
- -- Erase old unorderd capture data.
- MikCEH.EraseTable(unorderedCaptureData);
+  -- Assign directly by index instead of EraseTable + table_insert.
+  unorderedCaptureData[1] = c1;
+  unorderedCaptureData[2] = c2;
+  unorderedCaptureData[3] = c3;
+  unorderedCaptureData[4] = c4;
+  unorderedCaptureData[5] = c5;
+  unorderedCaptureData[6] = c6;
+  unorderedCaptureData[7] = c7;
+  unorderedCaptureData[8] = c8;
+  unorderedCaptureData[9] = c9;
 
- if (c1 ~= nil) then table.insert(unorderedCaptureData, c1); end
- if (c2 ~= nil) then table.insert(unorderedCaptureData, c2); end
- if (c3 ~= nil) then table.insert(unorderedCaptureData, c3); end
- if (c4 ~= nil) then table.insert(unorderedCaptureData, c4); end
- if (c5 ~= nil) then table.insert(unorderedCaptureData, c5); end
- if (c6 ~= nil) then table.insert(unorderedCaptureData, c6); end
- if (c7 ~= nil) then table.insert(unorderedCaptureData, c7); end
- if (c8 ~= nil) then table.insert(unorderedCaptureData, c8); end
- if (c9 ~= nil) then table.insert(unorderedCaptureData, c9); end
+  -- Clear any leftover slots beyond 9.
+  local i = 10;
+  while unorderedCaptureData[i] do unorderedCaptureData[i] = nil; i = i + 1; end
 
  -- Return the populated unordered capture data table.
- return unorderedCaptureData;
+  return unorderedCaptureData;
 end
 
 

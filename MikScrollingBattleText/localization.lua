@@ -315,6 +315,14 @@ MikSBT.DEFAULT_CONFIG = {
     Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
    },
   },
+  MSBT_EVENTTYPE_INCOMING_EVADE = {
+      Show						= true,
+      Message						= EVADE.."!",
+      FontSettings = {
+          Color						= {r=1, g=1, b=0},
+          Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
+      },
+  },
   MSBT_EVENTTYPE_INCOMING_SPELL_DAMAGE = {
    Show						= true,
    Message						= "-%a",
@@ -396,6 +404,14 @@ MikSBT.DEFAULT_CONFIG = {
     Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
     Crit 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
    },
+  },
+  MSBT_EVENTTYPE_INCOMING_SPELL_EVADE = {
+      Show						= true,
+      Message						= "(%s) "..EVADE.."!",
+      FontSettings = {
+          Color						= {r=1, g=1, b=0},
+          Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
+      },
   },
   MSBT_EVENTTYPE_INCOMING_HEAL = {
    Show						= true,
@@ -479,6 +495,14 @@ MikSBT.DEFAULT_CONFIG = {
     Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
    },
   },
+  MSBT_EVENTTYPE_INCOMING_PET_EVADE = {
+      Show						= true,
+      Message						= EVADE..L["! (Pet)"],
+      FontSettings = {
+          Color						= {r=1, g=0.7, b=0},
+          Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
+      },
+  },
   MSBT_EVENTTYPE_INCOMING_PET_SPELL_DAMAGE = {
    Show						= true,
    Message						= L["-%a (Pet)"],
@@ -551,6 +575,22 @@ MikSBT.DEFAULT_CONFIG = {
     Color						= {r=1, g=0.7, b=0},
     Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
    },
+  },
+  MSBT_EVENTTYPE_INCOMING_PET_SPELL_EVADE = {
+      Show						= true,
+      Message						= "(%s) "..EVADE..L["! (Pet)"],
+      FontSettings = {
+          Color						= {r=1, g=0.7, b=0},
+          Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
+      },
+  },
+  MSBT_EVENTTYPE_INCOMING_PET_SPELL_REFLECT = {
+      Show						= true,
+      Message						= "(%s) "..REFLECT..L["! (Pet)"],
+      FontSettings = {
+          Color						= {r=1, g=0.7, b=0},
+          Normal 						= {FontIndex=0, OutlineIndex=0, FontSize=0},
+      },
   },
   MSBT_EVENTTYPE_INCOMING_PET_HEAL = {
    Show						= true,
