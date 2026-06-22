@@ -4,6 +4,10 @@ A World of Warcraft 1.12 (Vanilla) addon that displays scrolling combat text aro
 
 **Interface:** 11200 | **Version:** 4.43
 
+## Requirements
+
+- **ClassicAPI** — a client-side DLL that backports modern WoW API calls to the 1.12 client (no companion addon required). MSBT relies on it for `C_Spell.GetSpellName`, `C_Item.GetItemName`/`GetItemIcon`, `ItemLocation`, and `CreateColor`/`GetRGB` — used for spell-name lookups, item-icon resolution, and damage-type text coloring. These are not optional fast paths; the addon expects them to be present.
+
 ## Features
 
 - Scrolling combat text across three display areas: **Incoming** (right), **Outgoing** (left), and **Notification** (center)
@@ -60,15 +64,17 @@ Interface/
 | `/msbt debug` | Toggle debug mode |
 | `/msbt help` | Show command usage |
 
-## Nampower / SuperWoW / UnitXP SP3 Integration
+## Nampower Integration
 
-When these enhanced client mods are detected, MSBT automatically switches from string-based combat log parsing to structured event handling for significantly better performance in heavy combat scenarios (raids, AoE, battlegrounds).
+When Nampower is detected, MSBT automatically switches from string-based combat log parsing to structured event handling for significantly better performance in heavy combat scenarios (raids, AoE, battlegrounds).
 
 ### What Changes
 
 - **Nampower**: Registers for structured events (`SPELL_DAMAGE_EVENT_SELF`, `AUTO_ATTACK_SELF`, `SPELL_HEAL_ON_SELF`, etc.) that provide pre-parsed combat data. Redundant `CHAT_MSG_*` events are unregistered to avoid duplicates. Enables `NP_EnableAutoAttackEvents`, `NP_EnableSpellHealEvents`, and `NP_EnableSpellEnergizeEvents` CVars.
-- **SuperWoW**: Provides O(1) unit lookups by name via `UnitExists(name)` (replacing O(n) raid/party iteration) and `SpellInfo(spellId)` for spell icon resolution.
-- **UnitXP SP3**: Detected for compatibility; used for GUID-based unit resolution.
+
+### Deprecated: SuperWoW / UnitXP SP3
+
+SuperWoW and UnitXP SP3 integration is being removed in favor of ClassicAPI (for spell/item lookups) and Nampower (for structured combat events). The detection paths (`SuperWoW`: O(1) `UnitExists(name)` lookups and `SpellInfo` icon resolution; `UnitXP SP3`: GUID-based unit resolution) still exist for now but should not be relied on and will be deleted.
 
 ### Fallback
 
