@@ -136,33 +136,22 @@ local spellIdIconCache = {}
 -- Babble-Spell pour les icones des spells de classe
 local BS = AceLibrary("Babble-Spell-2.2")
 
--- Damage type → color prefix lookup (lazily initialized after globals are available).
-local damageTypeColors
-local function GetDamageTypeColor(dt)
- if not damageTypeColors then
-  damageTypeColors = {
-   [SPELL_SCHOOL1_CAP] = "\124cffF6F99E\124h",
-   [SPELL_SCHOOL2_CAP] = "\124cffFF4444\124h",
-   [SPELL_SCHOOL3_CAP] = "\124cff44FF44\124h",
-   [SPELL_SCHOOL4_CAP] = "\124cff4488FF\124h",
-   [SPELL_SCHOOL5_CAP] = "\124cff6600CC\124h",
-   [SPELL_SCHOOL6_CAP] = "\124cffCC66FF\124h",
-   ["Inconnu"]         = "\124cffCC66FF\124h",
-  }
- end
- return damageTypeColors[dt]
-end
-
 -- Damage type → {r, g, b} float lookup for SetTextColor (lazily initialized).
 local damageTypeFontColors
 local function GetDamageTypeFontColor(dt)
  if not damageTypeFontColors then
+  local function CreateSpellColor(r, g, b)
+    local color = CreateColor(r, g, b)
+    color.colorStr = color:GenerateHexColorMarkup() .. "\124h"
+    return color
+  end
   damageTypeFontColors = {
-   [SPELL_SCHOOL2_CAP] = { r=1.0,  g=0.27, b=0.27 },  -- Fire (red)
-   [SPELL_SCHOOL3_CAP] = { r=0.27, g=1.0,  b=0.27 },  -- Nature (green)
-   [SPELL_SCHOOL4_CAP] = { r=0.27, g=0.53, b=1.0  },  -- Frost (blue)
-   [SPELL_SCHOOL5_CAP] = { r=0.4,  g=0.0,  b=0.8  },  -- Shadow (deep purple)
-   [SPELL_SCHOOL6_CAP] = { r=0.8,  g=0.4,  b=1.0  },  -- Arcane (purple/pink)
+   [SPELL_SCHOOL1_CAP] = CreateSpellColor(0.965, 0.976, 0.620),  -- Holy
+   [SPELL_SCHOOL2_CAP] = CreateSpellColor(0.933, 0.490, 0.501),  -- Fire
+   [SPELL_SCHOOL3_CAP] = CreateSpellColor(0.631, 0.858, 0.396),  -- Nature
+   [SPELL_SCHOOL4_CAP] = CreateSpellColor(0.462, 0.792, 0.929),  -- Frost
+   [SPELL_SCHOOL5_CAP] = CreateSpellColor(0.356, 0.290, 0.596),  -- Shadow
+   [SPELL_SCHOOL6_CAP] = CreateSpellColor(0.956, 0.658, 0.894),  -- Arcane
   }
  end
  return damageTypeFontColors[dt]
@@ -1145,14 +1134,14 @@ function MikSBT.FormatEventText(animationEvent)
  end
 
 	outputString = string_gsub(outputString, "-%%a", "\124cffff0000\124h-\124h\124r%%a");
-	
+
 	if animationEvent.DamageType then
-		local color = GetDamageTypeColor(animationEvent.DamageType)
+		local color = GetDamageTypeFontColor(animationEvent.DamageType)
 		if color then
-			outputString = string_gsub(outputString, "%%a", color .. "%%a\124h\124r")
+			outputString = string_gsub(outputString, "%%a", color.colorStr .. "%%a\124h\124r")
 		end
 	end
- 
+
  -- Substitute amount.
  if (animationEvent.Amount ~= nil) then
   -- Check if there is overheal info 
@@ -1786,9 +1775,7 @@ function MikSBT.AddAnimation(animationEvent)
   if animationEvent.DamageType and animationEvent.EventType then
    local dtColor = GetDamageTypeFontColor(animationEvent.DamageType)
    if dtColor then
-    animDisplayInfo.ColorR = dtColor.r
-    animDisplayInfo.ColorG = dtColor.g
-    animDisplayInfo.ColorB = dtColor.b
+    animDisplayInfo.ColorR, animDisplayInfo.ColorG, animDisplayInfo.ColorB = dtColor:GetRGB()
    end
   end
 
