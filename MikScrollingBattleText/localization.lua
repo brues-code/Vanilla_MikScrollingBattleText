@@ -126,6 +126,7 @@ MikSBT.AVAILABLE_FONTS = {
  [30] = {Name="PT-Sans-Narrow-Regular", Path="Interface\\Addons\\MikScrollingBattleText\\Fonts\\PT-Sans-Narrow-Regular.ttf"},
  [31] = {Name="Simhei", Path="Interface\\Addons\\MikScrollingBattleText\\Fonts\\simhei.ttf"},
  [32] = {Name="Archangelsk", Path="Interface\\Addons\\MikScrollingBattleText\\Fonts\\archangelsk.ttf"},
+ [32] = {Name="Numen", Path="Interface\\Addons\\MikScrollingBattleText\\Fonts\\Numen.ttf"},
 };
 end
 
