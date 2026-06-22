@@ -1855,25 +1855,26 @@ function MikSBT.AddAnimation(animationEvent)
 
  if animationEvent.EffectName then
 	 local name = string_gsub(animationEvent.EffectName, " %(%d+%)", "")
+   local lowerName = strlower(name)
 	 -- DEFAULT_CHAT_FRAME:AddMessage(animationEvent.EffectName)
 	 -- DEFAULT_CHAT_FRAME:AddMessage(name)
 	 -- texture = BS:GetSpellIcon(name)
-	 if ICON_CACHE[strlower(name)] then
-		texture = ICON_CACHE[strlower(name)]
+	 if ICON_CACHE[lowerName] then
+		texture = ICON_CACHE[lowerName]
 	 elseif not texture and MikSBT.FindBuff(name) then
 		local bufftype,index,_ = MikSBT.FindBuff(name)
 		local icon
 		if bufftype == "buff" then
 			icon = UnitBuff("player", index)
-			ICON_CACHE[strlower(name)] = icon
+			ICON_CACHE[lowerName] = icon
 			texture = icon
 		elseif bufftype == "debuff" then
 			icon = UnitDebuff("player", index)
-			ICON_CACHE[strlower(name)] = icon
+			ICON_CACHE[lowerName] = icon
 			texture = icon
 		else
 			texture = nil
-			NO_ICON_CACHE[strlower(name)] = 1
+			NO_ICON_CACHE[lowerName] = 1
 		end
 	 elseif not texture and MikCEH.hasNampower and GetSpellIdForName then
 		local ok, sid = pcall(GetSpellIdForName, name)
@@ -1881,17 +1882,17 @@ function MikSBT.AddAnimation(animationEvent)
 			local ok2, iconId = pcall(GetSpellRecField, sid, "spellIconID")
 			if ok2 and iconId then
 				local ok3, tex = pcall(GetSpellIconTexture, iconId)
-				if ok3 and tex then texture = tex; ICON_CACHE[strlower(name)] = tex end
+				if ok3 and tex then texture = tex; ICON_CACHE[lowerName] = tex end
 			end
 		end
 	 elseif not texture and BS and BS.GetSpellIcon and BS:GetSpellIcon(name) then
 		texture = BS:GetSpellIcon(name)
-	 elseif not texture and MikSBT.FindItemIcon(name) then
-		texture = MikSBT.FindItemIcon(name)
-		ICON_CACHE[strlower(name)] = MikSBT.FindItemIcon(name)
+	 elseif not texture and MikSBT.FindItemIcon(lowerName) then
+		texture = MikSBT.FindItemIcon(lowerName)
+		ICON_CACHE[lowerName] = MikSBT.FindItemIcon(lowerName)
 	 elseif not texture then
 		texture = nil
-		NO_ICON_CACHE[strlower(name)] = 1
+		NO_ICON_CACHE[lowerName] = 1
 	 end
  end
  
@@ -1950,10 +1951,17 @@ function ItemLinkToName(link)
 end
 
 function MikSBT.FindItemIcon(item)
-	if ( not item ) then return; end
+	if ( not item ) then return end
 	item = string.lower(item);
+  for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+    local itemLocation = ItemLocation:CreateFromEquipmentSlot(slot)
+    local itemName = C_Item.GetItemName(itemLocation)
+    if itemName and itemName == string.lower(itemName) then
+      return slot, nil, C_Item.GetItemIcon(itemLocation), GetInventoryItemCount('player', slot)
+    end
+  end
 	local link;
-	for i = 1,23 do
+	for i = INVSLOT_LAST_EQUIPPED + 1, 23 do
 		link = GetInventoryItemLink("player",i);
 		if ( link ) then
 			if ( item == string.lower(ItemLinkToName(link)) )then
@@ -1961,15 +1969,12 @@ function MikSBT.FindItemIcon(item)
 			end
 		end
 	end
-	local count, bag, slot, texture;
-	for i = 0,NUM_BAG_FRAMES do
-		for j = 1,MAX_CONTAINER_ITEMS do
-			link = GetContainerItemLink(i,j);
-			if ( link ) then
-				if ( item == string.lower(ItemLinkToName(link))) then
-					bag, slot = i, j;
-					texture, count = GetContainerItemInfo(i,j);
-				end
+	local count, texture;
+	for i = 0, NUM_BAG_FRAMES do
+		for j = 1, GetContainerNumSlots(i) do
+			local itemName = C_Item.GetItemName(ItemLocation:CreateFromBagAndSlot(i,j))
+			if itemName and item == string.lower(itemName) then
+        texture, count = GetContainerItemInfo(i,j);
 			end
 		end
 	end

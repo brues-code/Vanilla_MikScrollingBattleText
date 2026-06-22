@@ -817,15 +817,7 @@ local function GetSpellNameFromId(spellId)
  if not spellId or spellId == 0 then return nil end
  if spellNameCache[spellId] then return spellNameCache[spellId] end
 
- local name
- if hasSuperWoW and SpellInfo then
-  local ok, n = pcall(SpellInfo, spellId)
-  if ok and n then name = n end
- end
- if not name and hasNampower and GetSpellNameAndRankForId then
-  local ok, n = pcall(GetSpellNameAndRankForId, spellId)
-  if ok and n then name = n end
- end
+ local name = C_Spell.GetSpellName(spellId)
 
  if name then spellNameCache[spellId] = name end
  return name
