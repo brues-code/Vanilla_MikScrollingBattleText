@@ -4415,23 +4415,23 @@ end
 -- parameters passed.
 -- **********************************************************************************
 function MikCEH.GetUnorderedCaptureDataTable(c1, c2, c3, c4, c5, c6, c7, c8, c9)
-  -- Assign directly by index instead of EraseTable + table_insert.
-  unorderedCaptureData[1] = c1;
-  unorderedCaptureData[2] = c2;
-  unorderedCaptureData[3] = c3;
-  unorderedCaptureData[4] = c4;
-  unorderedCaptureData[5] = c5;
-  unorderedCaptureData[6] = c6;
-  unorderedCaptureData[7] = c7;
-  unorderedCaptureData[8] = c8;
-  unorderedCaptureData[9] = c9;
+ -- Assign directly by index instead of EraseTable + table_insert.
+ unorderedCaptureData[1] = c1;
+ unorderedCaptureData[2] = c2;
+ unorderedCaptureData[3] = c3;
+ unorderedCaptureData[4] = c4;
+ unorderedCaptureData[5] = c5;
+ unorderedCaptureData[6] = c6;
+ unorderedCaptureData[7] = c7;
+ unorderedCaptureData[8] = c8;
+ unorderedCaptureData[9] = c9;
 
-  -- Clear any leftover slots beyond 9.
-  local i = 10;
-  while unorderedCaptureData[i] do unorderedCaptureData[i] = nil; i = i + 1; end
+ -- Clear any leftover slots beyond 9.
+ local i = 10;
+ while unorderedCaptureData[i] do unorderedCaptureData[i] = nil; i = i + 1; end
 
  -- Return the populated unordered capture data table.
-  return unorderedCaptureData;
+ return unorderedCaptureData;
 end
 
 
