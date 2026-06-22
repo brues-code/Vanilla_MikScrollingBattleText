@@ -174,10 +174,8 @@ local lastFriendlyHealthPercentage = 0;
 local recentlySelectedPlayers = {};
 local elapsedTime = 0;
 
--- Feature detection flags for enhanced combat event mods.
+-- Feature detection flag for Nampower structured combat events.
 local hasNampower = false
-local hasSuperWoW = false
-local hasUnitXP = false
 
 -- Runtime detection flags for Nampower events.
 -- These start false and flip true on first invocation of the corresponding handler,
@@ -190,7 +188,7 @@ local nampowerBuffsActive = false
 local nampowerPetAutoAttackActive = false
 local nampowerPetSpellDamageActive = false
 
--- Cached player GUID for Nampower event handlers (set in Init when SuperWoW/Nampower present).
+-- Cached player GUID for Nampower event handlers (set in Init when Nampower is present).
 local playerGUID = nil
 
 -- Event throttling for trigger checks.
@@ -349,10 +347,7 @@ function MikCEH.OnEvent()
  elseif (event == "PLAYER_ENTERING_WORLD") then
   this:UnregisterEvent("PLAYER_ENTERING_WORLD");
   if not playerGUID then
-   if hasSuperWoW and UnitExists("player") then
-    local _, _, guid = pcall(UnitExists, "player")
-    if guid then playerGUID = guid end
-   elseif hasNampower and UnitGUID then
+   if hasNampower and UnitGUID then
     local ok, guid = pcall(UnitGUID, "player")
     if ok and guid then playerGUID = guid end
    end
@@ -663,13 +658,9 @@ function MikCEH.Init()
  playerName = UnitName("player");
  _, playerClass = UnitClass("player");
 
- -- Detect enhanced combat event mods.
+ -- Detect Nampower structured combat event support.
  hasNampower = (GetNampowerVersion ~= nil)
- hasSuperWoW = (SUPERWOW_VERSION ~= nil) or (SetAutoloot ~= nil and SpellInfo ~= nil)
- hasUnitXP = pcall(UnitXP, "nop", "nop")
  MikCEH.hasNampower = hasNampower
- MikCEH.hasSuperWoW = hasSuperWoW
- MikCEH.hasUnitXP = hasUnitXP
  MikCEH.nampowerHealsActive = false
  MikCEH.nampowerAutoAttackActive = false
  MikCEH.nampowerEnergizeActive = false
@@ -690,11 +681,8 @@ function MikCEH.Init()
   end
  end
 
- -- Cache the player GUID when SuperWoW or Nampower is available.
- if hasSuperWoW and UnitExists("player") then
-  local _, _, guid = pcall(UnitExists, "player")
-  if guid then playerGUID = guid end
- elseif hasNampower and UnitGUID then
+ -- Cache the player GUID when Nampower is available.
+ if hasNampower and UnitGUID then
   local ok, guid = pcall(UnitGUID, "player")
   if ok and guid then playerGUID = guid end
  end
@@ -702,7 +690,7 @@ end
 
 
 -------------------------------------------------------------------------------------
--- Nampower / SuperWoW / UnitXP Infrastructure.
+-- Nampower Infrastructure.
 -------------------------------------------------------------------------------------
 
 -- Spell school index (Nampower) to MikCEH damage type mapping.
@@ -762,14 +750,10 @@ local nampowerPowerTypeToString = {
 
 
 -- **********************************************************************************
--- Resolves a name from a GUID using SuperWoW or Nampower APIs.
+-- Resolves a name from a GUID using Nampower APIs.
 -- **********************************************************************************
 local function GetNameFromGUID(guid)
  if not guid then return nil end
- if hasSuperWoW then
-  local ok, exists, uid = pcall(UnitExists, guid)
-  if ok and exists then return UnitName(uid) end
- end
  if hasNampower and GetUnitField then
   local ok, name = pcall(GetUnitField, guid, "name")
   if ok and name then return name end
@@ -791,10 +775,6 @@ end
 -- **********************************************************************************
 local function IsPetGUID(guid)
  if not guid or not UnitExists("pet") then return false end
- if hasSuperWoW then
-  local ok, exists, uid = pcall(UnitExists, guid)
-  if ok and exists then return uid == "pet" or UnitName(uid) == UnitName("pet") end
- end
  if hasNampower and UnitGUID then
   local ok, petGuid = pcall(UnitGUID, "pet")
   if ok and petGuid then return guid == petGuid end
@@ -813,7 +793,7 @@ end
 
 
 -- **********************************************************************************
--- Gets a spell name from a spellId, using SuperWoW or Nampower APIs with caching.
+-- Gets a spell name from a spellId via ClassicAPI (C_Spell), with caching.
 -- **********************************************************************************
 local function GetSpellNameFromId(spellId)
  if not spellId or spellId == 0 then return nil end
@@ -857,10 +837,6 @@ end
 -- **********************************************************************************
 local function EnsurePlayerGUID()
  if playerGUID then return true end
- if hasSuperWoW and UnitExists("player") then
-  local _, _, guid = pcall(UnitExists, "player")
-  if guid then playerGUID = guid; return true end
- end
  if hasNampower and UnitGUID then
   local ok, guid = pcall(UnitGUID, "player")
   if ok and guid then playerGUID = guid; return true end
@@ -4571,11 +4547,8 @@ end
 function MikCEH.GetUnitIDFromName(uName)
  local unitID, unitName;
 
- -- SuperWoW fast path: O(1) unit lookup by name.
- if hasSuperWoW then
-  local ok, exist, uid = pcall(UnitExists, uName)
-  if ok and exist then return uid, UnitName(uid) end
- elseif LoggingCombat and LoggingCombat("RAW") == 1 then
+ -- Fast path when raw combat logging is enabled: O(1) unit lookup by name.
+ if LoggingCombat and LoggingCombat("RAW") == 1 then
   local _, exist, uid = pcall(UnitExists, uName)
   if _ and exist then
    unitName = UnitName(uid)

@@ -1841,9 +1841,6 @@ function MikSBT.AddAnimation(animationEvent)
   local sid = animationEvent.SpellId
   if spellIdIconCache[sid] then
    texture = spellIdIconCache[sid]
-  elseif MikCEH.hasSuperWoW and SpellInfo then
-   local ok, _, _, tex = pcall(SpellInfo, sid)
-   if ok and tex then texture = tex; spellIdIconCache[sid] = tex end
   elseif MikCEH.hasNampower and GetSpellRecField and GetSpellIconTexture then
    local ok, iconId = pcall(GetSpellRecField, sid, "spellIconID")
    if ok and iconId then

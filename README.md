@@ -72,19 +72,19 @@ When Nampower is detected, MSBT automatically switches from string-based combat 
 
 - **Nampower**: Registers for structured events (`SPELL_DAMAGE_EVENT_SELF`, `AUTO_ATTACK_SELF`, `SPELL_HEAL_ON_SELF`, etc.) that provide pre-parsed combat data. Redundant `CHAT_MSG_*` events are unregistered to avoid duplicates. Enables `NP_EnableAutoAttackEvents`, `NP_EnableSpellHealEvents`, and `NP_EnableSpellEnergizeEvents` CVars.
 
-### Deprecated: SuperWoW / UnitXP SP3
+### Removed: SuperWoW / UnitXP SP3
 
-SuperWoW and UnitXP SP3 integration is being removed in favor of ClassicAPI (for spell/item lookups) and Nampower (for structured combat events). The detection paths (`SuperWoW`: O(1) `UnitExists(name)` lookups and `SpellInfo` icon resolution; `UnitXP SP3`: GUID-based unit resolution) still exist for now but should not be relied on and will be deleted.
+SuperWoW and UnitXP SP3 integration has been removed in favor of ClassicAPI (for spell/item lookups) and Nampower (for structured combat events). GUID and unit-name resolution now go through Nampower APIs, and spell/item icon and name resolution through ClassicAPI.
 
 ### Fallback
 
-When none of these mods are present, the addon falls back to the original string-parsing pipeline with no changes in behavior.
+When Nampower is not present, the addon falls back to the original string-parsing pipeline with no changes in behavior.
 
 ### Verification
 
 ```lua
 -- Check detection status in-game:
-/run MikSBT.Print("NP="..tostring(MikCEH.hasNampower).." SW="..tostring(MikCEH.hasSuperWoW).." UXP="..tostring(MikCEH.hasUnitXP))
+/run MikSBT.Print("NP="..tostring(MikCEH.hasNampower))
 ```
 
 ## Performance Optimizations
