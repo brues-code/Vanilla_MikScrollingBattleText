@@ -199,9 +199,6 @@ local lastTriggerCheckTime = 0
 local nampowerEventFrame = nil
 local nampowerHandlers = {}
 
--- Spell name cache for spellId lookups.
-local spellNameCache = {}
-
 -- Name→unitID cache for avoiding O(n) raid/party iteration.
 local nameToUnitIDCache = {}
 local nameToUnitIDCacheDirty = true
@@ -787,16 +784,11 @@ end
 
 
 -- **********************************************************************************
--- Gets a spell name from a spellId via ClassicAPI (C_Spell), with caching.
+-- Gets a spell name from a spellId via ClassicAPI (C_Spell).
 -- **********************************************************************************
 local function GetSpellNameFromId(spellId)
  if not spellId or spellId == 0 then return nil end
- if spellNameCache[spellId] then return spellNameCache[spellId] end
-
- local name = C_Spell.GetSpellName(spellId)
-
- if name then spellNameCache[spellId] = name end
- return name
+ return C_Spell.GetSpellName(spellId)
 end
 
 
