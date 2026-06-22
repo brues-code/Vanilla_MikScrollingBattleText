@@ -188,7 +188,7 @@ local nampowerBuffsActive = false
 local nampowerPetAutoAttackActive = false
 local nampowerPetSpellDamageActive = false
 
--- Cached player GUID for Nampower event handlers (set in Init when Nampower is present).
+-- Cached player GUID for Nampower event handlers (set in Init via ClassicAPI's UnitGUID).
 local playerGUID = nil
 
 -- Event throttling for trigger checks.
@@ -347,10 +347,8 @@ function MikCEH.OnEvent()
  elseif (event == "PLAYER_ENTERING_WORLD") then
   this:UnregisterEvent("PLAYER_ENTERING_WORLD");
   if not playerGUID then
-   if hasNampower and UnitGUID then
-    local ok, guid = pcall(UnitGUID, "player")
-    if ok and guid then playerGUID = guid end
-   end
+   local ok, guid = pcall(UnitGUID, "player")
+   if ok and guid then playerGUID = guid end
   end
 
  -- Leave Combat
@@ -681,11 +679,9 @@ function MikCEH.Init()
   end
  end
 
- -- Cache the player GUID when Nampower is available.
- if hasNampower and UnitGUID then
-  local ok, guid = pcall(UnitGUID, "player")
-  if ok and guid then playerGUID = guid end
- end
+ -- Cache the player GUID (UnitGUID is provided by ClassicAPI).
+ local ok, guid = pcall(UnitGUID, "player")
+ if ok and guid then playerGUID = guid end
 end
 
 
@@ -775,10 +771,8 @@ end
 -- **********************************************************************************
 local function IsPetGUID(guid)
  if not guid or not UnitExists("pet") then return false end
- if hasNampower and UnitGUID then
-  local ok, petGuid = pcall(UnitGUID, "pet")
-  if ok and petGuid then return guid == petGuid end
- end
+ local ok, petGuid = pcall(UnitGUID, "pet")
+ if ok and petGuid then return guid == petGuid end
  return false
 end
 
@@ -833,14 +827,13 @@ end
 
 -- **********************************************************************************
 -- Ensures playerGUID is set. Called lazily by Nampower event handlers since
--- UnitGUID may not be available during ADDON_LOADED for some users.
+-- UnitGUID("player") may still return nil during ADDON_LOADED before the
+-- player unit is fully available.
 -- **********************************************************************************
 local function EnsurePlayerGUID()
  if playerGUID then return true end
- if hasNampower and UnitGUID then
-  local ok, guid = pcall(UnitGUID, "player")
-  if ok and guid then playerGUID = guid; return true end
- end
+ local ok, guid = pcall(UnitGUID, "player")
+ if ok and guid then playerGUID = guid; return true end
  return false
 end
 
