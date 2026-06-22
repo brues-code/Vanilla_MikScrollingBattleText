@@ -705,15 +705,17 @@ end
 -- Nampower / SuperWoW / UnitXP Infrastructure.
 -------------------------------------------------------------------------------------
 
--- Spell school bitmask (Nampower) to MikCEH damage type mapping.
+-- Spell school index (Nampower) to MikCEH damage type mapping.
+-- Nampower reports the school as a sequential index (0 = Physical, 1 = Holy,
+-- 2 = Fire, ...), not the power-of-two bitmask the comment previously assumed.
 local nampowerSchoolToType = {
- [0]  = MikCEH.DAMAGETYPE_PHYSICAL,  -- Physical
- [1]  = MikCEH.DAMAGETYPE_HOLY,      -- Holy
- [2]  = MikCEH.DAMAGETYPE_FIRE,      -- Fire
- [4]  = MikCEH.DAMAGETYPE_NATURE,    -- Nature
- [8]  = MikCEH.DAMAGETYPE_FROST,     -- Frost
- [16] = MikCEH.DAMAGETYPE_SHADOW,    -- Shadow
- [32] = MikCEH.DAMAGETYPE_ARCANE,    -- Arcane
+ [0] = MikCEH.DAMAGETYPE_PHYSICAL,
+ MikCEH.DAMAGETYPE_HOLY,
+ MikCEH.DAMAGETYPE_FIRE,
+ MikCEH.DAMAGETYPE_NATURE,
+ MikCEH.DAMAGETYPE_FROST,
+ MikCEH.DAMAGETYPE_SHADOW,
+ MikCEH.DAMAGETYPE_ARCANE,
 }
 
 -- Nampower SpellMissInfo to MikCEH action type mapping.
@@ -802,7 +804,7 @@ end
 
 
 -- **********************************************************************************
--- Converts a Nampower spell school bitmask to a MikCEH damage type.
+-- Converts a Nampower spell school index to a MikCEH damage type.
 -- **********************************************************************************
 local function SchoolToDamageType(school)
  if not school then return MikCEH.DAMAGETYPE_PHYSICAL end
