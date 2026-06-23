@@ -1,5 +1,5 @@
 ## Interface: 11200
-## Version: 4.43
+## Version: @project-version@
 ## Title: Mik's Scrolling Battle Text
 ## Notes: Scrolls battle information around the character model.
 ## Notes-ruRU: Прокрутка информации боя вокруг модели персонажа.
