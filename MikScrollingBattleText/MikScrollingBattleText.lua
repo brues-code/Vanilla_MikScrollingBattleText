@@ -1950,22 +1950,13 @@ end
 function MikSBT.FindItemIcon(item)
 	if ( not item ) then return end
 	item = string.lower(item);
-  for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+  for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED + 4 do
     local itemLocation = ItemLocation:CreateFromEquipmentSlot(slot)
     local itemName = C_Item.GetItemName(itemLocation)
-    if itemName and itemName == string.lower(itemName) then
+    if itemName and item == string.lower(itemName) then
       return slot, nil, C_Item.GetItemIcon(itemLocation), GetInventoryItemCount('player', slot)
     end
   end
-	local link;
-	for i = INVSLOT_LAST_EQUIPPED + 1, 23 do
-		link = GetInventoryItemLink("player",i);
-		if ( link ) then
-			if ( item == string.lower(ItemLinkToName(link)) )then
-				return i, nil, GetInventoryItemTexture('player', i), GetInventoryItemCount('player', i);
-			end
-		end
-	end
 	local count, texture;
 	for i = 0, NUM_BAG_FRAMES do
 		for j = 1, GetContainerNumSlots(i) do
