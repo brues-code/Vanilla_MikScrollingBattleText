@@ -11,15 +11,6 @@
   </Scripts>
  </Frame>
 
- <!-- Tooltip -->
- <GameTooltip name="MSBT_Tooltip" frameStrata="TOOLTIP" hidden="true" parent="UIParent" inherits="GameTooltipTemplate">
-		<Scripts>
-			<OnLoad>
-		this:SetOwner(WorldFrame, "ANCHOR_NONE");
-			</OnLoad>
-		</Scripts>
- </GameTooltip>
- 
  <!-- Incoming Scroll Area -->
  <Frame name="MSBTFrameIncoming" toplevel="true" enableMouse="false" parent="UIParent" frameStrata="HIGH" hidden="true">
   <Size>

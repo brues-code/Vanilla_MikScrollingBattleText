@@ -1858,21 +1858,9 @@ function MikSBT.AddAnimation(animationEvent)
 	 -- texture = BS:GetSpellIcon(name)
 	 if ICON_CACHE[lowerName] then
 		texture = ICON_CACHE[lowerName]
-	 elseif not texture and MikSBT.FindBuff(name) then
-		local bufftype,index,_ = MikSBT.FindBuff(name)
-		local icon
-		if bufftype == "buff" then
-			icon = UnitBuff("player", index)
-			ICON_CACHE[lowerName] = icon
-			texture = icon
-		elseif bufftype == "debuff" then
-			icon = UnitDebuff("player", index)
-			ICON_CACHE[lowerName] = icon
-			texture = icon
-		else
-			texture = nil
-			NO_ICON_CACHE[lowerName] = 1
-		end
+	 elseif not texture and MikSBT.GetAuraIcon(name) then
+		texture = MikSBT.GetAuraIcon(name)
+		ICON_CACHE[lowerName] = texture
 	 elseif not texture and MikCEH.hasNampower and GetSpellIdForName then
 		local ok, sid = pcall(GetSpellIdForName, name)
 		if ok and sid and sid ~= 0 then
@@ -1970,79 +1958,30 @@ function MikSBT.FindItemIcon(item)
 end
 
 -- **********************************************************************************
--- This function return the buff texture based on
--- it's name.
+-- Returns the icon for an active buff/debuff or temporary weapon enchant whose
+-- name matches, or nil. Uses ClassicAPI (C_UnitAuras / C_Item) instead of the old
+-- tooltip-scanning approach.
 -- **********************************************************************************
-function MikSBT.FindBuff( obuff, unit, item)
-	local buff=strlower(obuff);
-	local tooltip=MSBT_Tooltip;
-	local textleft1=getglobal(tooltip:GetName().."TextLeft1");
-	if ( not unit ) then
-		unit ='player';
-	end
-	local my, me, mc, oy, oe, oc = GetWeaponEnchantInfo();
-	if ( my ) then
-		tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		tooltip:SetInventoryItem( unit, 16);
-		for i=1, 23 do
-			local text = getglobal("MSBT_TooltipTextLeft"..i):GetText();
-			if ( not text ) then
-				break;
-			elseif (text and strlower(text) == buff) then
-				tooltip:Hide();
-				return "main",me, mc;
-			end
+function MikSBT.GetAuraIcon(name, unit)
+	unit = unit or "player";
+	-- Buffs and debuffs (helpful then harmful) -- AuraData carries the icon directly.
+	local aura = C_UnitAuras.GetAuraDataBySpellName(unit, name);
+	if ( aura and aura.icon ) then return aura.icon end
+
+	-- Temporary weapon enchant (oils, poisons, imbues) matching this name.
+	local hasMain, _, _, mainID, hasOff, _, _, offID = C_Item.GetWeaponEnchantInfo();
+	if ( hasMain and mainID ) then
+		local info = C_Item.GetEnchantInfo(mainID);
+		if ( info and info.name == name and info.spellID ) then
+			return C_Spell.GetSpellTexture(info.spellID);
 		end
-		tooltip:Hide();
-	elseif ( oy ) then
-		tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		tooltip:SetInventoryItem( unit, 17);
-		for i=1, 23 do
-			local text = getglobal("MSBT_TooltipTextLeft"..i):GetText();
-			if ( not text ) then
-				break;
-			elseif (text and strlower(text) == buff) then
-				tooltip:Hide();
-				return "off", oe, oc;
-			end
+	end
+	if ( hasOff and offID ) then
+		local info = C_Item.GetEnchantInfo(offID);
+		if ( info and info.name == name and info.spellID ) then
+			return C_Spell.GetSpellTexture(info.spellID);
 		end
-		tooltip:Hide();
 	end
-	if ( item ) then return end
-	tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-	tooltip:SetTrackingSpell();
-	local b = textleft1:GetText();
-	if ( b and strlower(b) == buff ) then
-		tooltip:Hide();
-		return "track",b;
-	end
-	local c=nil;
-	for i=1, 32 do
-		tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		tooltip:SetUnitBuff(unit, i);
-		b = textleft1:GetText();
-		tooltip:Hide();
-		if ( b and strlower(b) == buff ) then
-			return "buff", i, b;
-		elseif ( c==b ) then
-			break;
-		end
-		--c = b;
-	end
-	c=nil;
-	for i=1, 16 do
-		tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		tooltip:SetUnitDebuff(unit, i);
-		b = textleft1:GetText();
-		tooltip:Hide();
-		if ( b and strlower(b) == buff ) then
-			return "debuff", i, b;
-		elseif ( c==b) then
-			break;
-		end
-		--c = b;
-	end
-	tooltip:Hide();
 end
 
 -- **********************************************************************************
