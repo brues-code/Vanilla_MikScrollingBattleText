@@ -1884,12 +1884,14 @@ function MikSBT.AddAnimation(animationEvent)
 		end
 	 elseif not texture and BS and BS.GetSpellIcon and BS:GetSpellIcon(name) then
 		texture = BS:GetSpellIcon(name)
-	 elseif not texture and MikSBT.FindItemIcon(lowerName) then
-		texture = MikSBT.FindItemIcon(lowerName)
-		ICON_CACHE[lowerName] = MikSBT.FindItemIcon(lowerName)
 	 elseif not texture then
-		texture = nil
-		NO_ICON_CACHE[lowerName] = 1
+		local itemIcon = MikSBT.FindItemIcon(lowerName)
+		if itemIcon then
+			texture = itemIcon
+			ICON_CACHE[lowerName] = itemIcon
+		else
+			NO_ICON_CACHE[lowerName] = 1
+		end
 	 end
  end
  
@@ -1954,19 +1956,17 @@ function MikSBT.FindItemIcon(item)
     local itemLocation = ItemLocation:CreateFromEquipmentSlot(slot)
     local itemName = C_Item.GetItemName(itemLocation)
     if itemName and item == string.lower(itemName) then
-      return slot, nil, C_Item.GetItemIcon(itemLocation), GetInventoryItemCount('player', slot)
+      return C_Item.GetItemIcon(itemLocation)
     end
   end
-	local count, texture;
 	for i = 0, NUM_BAG_FRAMES do
 		for j = 1, GetContainerNumSlots(i) do
 			local itemName = C_Item.GetItemName(ItemLocation:CreateFromBagAndSlot(i,j))
 			if itemName and item == string.lower(itemName) then
-        texture, count = GetContainerItemInfo(i,j);
+        return (GetContainerItemInfo(i,j))
 			end
 		end
 	end
-	return texture;
 end
 
 -- **********************************************************************************
