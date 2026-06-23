@@ -18,8 +18,11 @@ MikSBT.WINDOW_TITLE	= "Mik's Scrolling Battle Text " .. MikSBT.VERSION_STRING ..
 
 MikSBT.COMMAND		= "/msbt";
 
-local BS = AceLibrary("Babble-Spell-2.2")
 local L = AceLibrary("AceLocale-2.2"):new(MikSBT.MOD_NAME)
+
+-- Resolves a spell's localized name from its ID via ClassicAPI (C_Spell), replacing
+-- the old Babble-Spell localization library. Any rank's spell ID yields the same name.
+local function SpellName(id) return C_Spell.GetSpellName(id) or "" end
 
 -------------------------------------------------------------------------------
 -- English (Default)
@@ -1135,7 +1138,7 @@ MikSBT.DEFAULT_CONFIG = {
   MSBT_TRIGGER_EXECUTE = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Execute"].."!",
+    Message				= SpellName(5308).."!",  -- Execute
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},
@@ -1152,7 +1155,7 @@ MikSBT.DEFAULT_CONFIG = {
   MSBT_TRIGGER_HAMMER_OF_WRATH = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Hammer of Wrath"].."!",
+    Message				= SpellName(24275).."!",  -- Hammer of Wrath
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},
@@ -1169,7 +1172,7 @@ MikSBT.DEFAULT_CONFIG = {
   MSBT_TRIGGER_COUNTER_ATTACK = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Counterattack"].."!",
+    Message				= SpellName(19306).."!",  -- Counterattack
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},
@@ -1188,7 +1191,7 @@ MikSBT.DEFAULT_CONFIG = {
   MSBT_TRIGGER_MONGOOSE_BITE = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Mongoose Bite"].."!",
+    Message				= SpellName(1495).."!",  -- Mongoose Bite
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},
@@ -1207,7 +1210,7 @@ MikSBT.DEFAULT_CONFIG = {
   MSBT_TRIGGER_CLEARCAST = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Clearcasting"].."!",
+    Message				= SpellName(16246).."!",  -- Clearcasting
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},
@@ -1218,14 +1221,14 @@ MikSBT.DEFAULT_CONFIG = {
     Classes				= {MAGE=true,SHAMAN=true},
     TriggerType			= 6,
     TriggerEvents			= {"CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS"},
-    SearchPatterns		= {string.format(AURAADDEDSELFHELPFUL, BS["Clearcasting"])},
+    SearchPatterns		= {string.format(AURAADDEDSELFHELPFUL, SpellName(16246))},  -- Clearcasting (ID verified vs Spell.dbc)
    },
    Texture = "Interface\\Icons\\spell_shadow_manaburn"
   },
   MSBT_TRIGGER_RIPOSTE = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Riposte"].."!",
+    Message				= SpellName(14251).."!",  -- Riposte
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},
@@ -1254,14 +1257,14 @@ MikSBT.DEFAULT_CONFIG = {
    TriggerSettings = {
     TriggerType			= 6,
     TriggerEvents			= {"CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS"},
-    SearchPatterns		= {string.format(AURAADDEDSELFHELPFUL, string.gsub(BS["Windfury Totem"], "-", "%%-"))},  --"Vous gagnez Totem Furie-des-vents" -- escape char !
+    SearchPatterns		= {string.format(AURAADDEDSELFHELPFUL, string.gsub(SpellName(8512), "-", "%%-"))},  -- Windfury Totem (ID verified vs Spell.dbc). "Vous gagnez Totem Furie-des-vents" -- escape char !
    },
    Texture = "Interface\\Icons\\spell_nature_cyclone"
   },
   MSBT_TRIGGER_NIGHTFALL = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Nightfall"].."!",
+    Message				= SpellName(18094).."!",  -- Nightfall (talent)
     IsSticky			= true,
     FontSettings = {
      Color				= {r=0.709, g=0, b=0.709},
@@ -1272,14 +1275,14 @@ MikSBT.DEFAULT_CONFIG = {
     Classes				= {WARLOCK=true},
     TriggerType			= 6,
     TriggerEvents			= {"CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS"},
-    SearchPatterns		= {string.format(AURAADDEDSELFHELPFUL, BS["Shadow Trance"])},
+    SearchPatterns		= {string.format(AURAADDEDSELFHELPFUL, SpellName(17941))},  -- Shadow Trance (ID verified vs Spell.dbc)
    },
    Texture = "Interface\\Icons\\spell_shadow_twilight"
   },
   MSBT_TRIGGER_OVERPOWER = {
    EventSettings = {
     Show				= true,
-    Message				= BS["Overpower"].."!",
+    Message				= SpellName(7384).."!",  -- Overpower
     IsSticky			= true,
     FontSettings = {
      Color				= {r=1, g=1, b=0},

@@ -133,9 +133,6 @@ NO_ICON_CACHE = {}
 -- Cache for spellId-based icon lookups (bypasses Babble-Spell and tooltip scanning).
 local spellIdIconCache = {}
 
--- Babble-Spell pour les icones des spells de classe
-local BS = AceLibrary("Babble-Spell-2.2")
-
 -- Damage type → {r, g, b} float lookup for SetTextColor (lazily initialized).
 local damageTypeFontColors
 local function GetDamageTypeFontColor(dt)
@@ -1332,7 +1329,7 @@ function MikSBT.UpdateProfiles()
   if (profile.CreationVersion < 4.1) then
 
    if profile.Triggers.MSBT_TRIGGER_WINDFURY then -- Fix Windfury Trigger
-	   profile.Triggers.MSBT_TRIGGER_WINDFURY.TriggerSettings.SearchPatterns[1] = string.format(AURAADDEDSELFHELPFUL, string_gsub(BS["Windfury Totem"], "-", "%%-"))
+	   profile.Triggers.MSBT_TRIGGER_WINDFURY.TriggerSettings.SearchPatterns[1] = string.format(AURAADDEDSELFHELPFUL, string_gsub(C_Spell.GetSpellName(8512) or "", "-", "%%-"))  -- Windfury Totem (ID verified vs Spell.dbc)
    end
 
    if profile.Triggers.MSBT_TRIGGER_HAND_OF_JUSTICE then -- Delete Hand of Justice Trigger
@@ -1855,7 +1852,6 @@ function MikSBT.AddAnimation(animationEvent)
    local lowerName = strlower(name)
 	 -- DEFAULT_CHAT_FRAME:AddMessage(animationEvent.EffectName)
 	 -- DEFAULT_CHAT_FRAME:AddMessage(name)
-	 -- texture = BS:GetSpellIcon(name)
 	 if ICON_CACHE[lowerName] then
 		texture = ICON_CACHE[lowerName]
 	 elseif not texture and MikSBT.GetAuraIcon(name) then
@@ -1870,8 +1866,6 @@ function MikSBT.AddAnimation(animationEvent)
 				if ok3 and tex then texture = tex; ICON_CACHE[lowerName] = tex end
 			end
 		end
-	 elseif not texture and BS and BS.GetSpellIcon and BS:GetSpellIcon(name) then
-		texture = BS:GetSpellIcon(name)
 	 elseif not texture then
 		local itemIcon = MikSBT.FindItemIcon(lowerName)
 		if itemIcon then
