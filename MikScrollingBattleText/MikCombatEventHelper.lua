@@ -756,14 +756,6 @@ end
 
 
 -- **********************************************************************************
--- Checks if the given GUID belongs to the player.
--- **********************************************************************************
-local function IsPlayerGUID(guid)
- return playerGUID and guid == playerGUID
-end
-
-
--- **********************************************************************************
 -- Checks if the given GUID belongs to the player's pet.
 -- **********************************************************************************
 local function IsPetGUID(guid)
@@ -861,8 +853,8 @@ nampowerHandlers["SPELL_DAMAGE_EVENT_SELF"] = function()
  -- Special case: if the player is both caster and target (e.g. Hellfire self-damage,
  -- spell reflects), route as incoming since the player is taking damage.
  local directionType
- if IsPlayerGUID(casterGuid) then
-  if IsPlayerGUID(targetGuid) then
+ if IsPlayerGuid(casterGuid) then
+  if IsPlayerGuid(targetGuid) then
    directionType = MikCEH.DIRECTIONTYPE_PLAYER_INCOMING
   else
    directionType = MikCEH.DIRECTIONTYPE_PLAYER_OUTGOING
@@ -922,7 +914,7 @@ nampowerHandlers["SPELL_DAMAGE_EVENT_OTHER"] = function()
 
  -- Only process if target is player or pet.
  local directionType
- if IsPlayerGUID(targetGuid) then
+ if IsPlayerGuid(targetGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PLAYER_INCOMING
  elseif IsPetGUID(targetGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PET_INCOMING
@@ -975,7 +967,7 @@ nampowerHandlers["AUTO_ATTACK_SELF"] = function()
  local resistedDmg = arg9 or 0
 
  local directionType
- if IsPlayerGUID(casterGuid) then
+ if IsPlayerGuid(casterGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PLAYER_OUTGOING
   nampowerAutoAttackActive = true
  elseif IsPetGUID(casterGuid) then
@@ -1047,7 +1039,7 @@ nampowerHandlers["AUTO_ATTACK_OTHER"] = function()
  local resistedDmg = arg9 or 0
 
  local directionType
- if IsPlayerGUID(targetGuid) then
+ if IsPlayerGuid(targetGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PLAYER_INCOMING
   nampowerAutoAttackActive = true
  elseif IsPetGUID(targetGuid) then
@@ -1111,7 +1103,7 @@ nampowerHandlers["SPELL_HEAL_ON_SELF"] = function()
  local isHot = arg6
 
  -- Only for player.
- if not IsPlayerGUID(targetGuid) then return end
+ if not IsPlayerGuid(targetGuid) then return end
 
  -- Only disable CHAT_MSG fallback after we've confirmed playerGUID works.
  nampowerHealsActive = true
@@ -1154,7 +1146,7 @@ nampowerHandlers["SPELL_HEAL_BY_SELF"] = function()
  -- When playerGUID is nil, we can't identify self-heals, so bail out
  -- and let the CHAT_MSG fallback handle it.
  if not playerGUID then return end
- if IsPlayerGUID(targetGuid) then return end
+ if IsPlayerGuid(targetGuid) then return end
 
  -- Only disable CHAT_MSG fallback after we've confirmed playerGUID works.
  nampowerHealsActive = true
@@ -1215,7 +1207,7 @@ nampowerHandlers["SPELL_MISS_SELF"] = function()
  local missInfo = arg4
 
  local directionType
- if IsPlayerGUID(casterGuid) then
+ if IsPlayerGuid(casterGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PLAYER_OUTGOING
   nampowerSpellDamageActive = true
  elseif IsPetGUID(casterGuid) then
@@ -1247,7 +1239,7 @@ nampowerHandlers["SPELL_MISS_OTHER"] = function()
 
  -- Only process if target is player or pet.
  local directionType
- if IsPlayerGUID(targetGuid) then
+ if IsPlayerGuid(targetGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PLAYER_INCOMING
  elseif IsPetGUID(targetGuid) then
   directionType = MikCEH.DIRECTIONTYPE_PET_INCOMING
@@ -1276,7 +1268,7 @@ nampowerHandlers["BUFF_ADDED_SELF"] = function()
  local state = arg7
 
  -- Only for player.
- if not IsPlayerGUID(unitGuid) then return end
+ if not IsPlayerGuid(unitGuid) then return end
 
  nampowerBuffsActive = true
 
@@ -1303,7 +1295,7 @@ nampowerHandlers["DEBUFF_ADDED_SELF"] = function()
  local state = arg7
 
  -- Only for player.
- if not IsPlayerGUID(unitGuid) then return end
+ if not IsPlayerGuid(unitGuid) then return end
 
  nampowerBuffsActive = true
 
@@ -1329,7 +1321,7 @@ nampowerHandlers["BUFF_REMOVED_SELF"] = function()
  local spellId = arg3
 
  -- Only for player.
- if not IsPlayerGUID(unitGuid) then return end
+ if not IsPlayerGuid(unitGuid) then return end
 
  local spellName = GetSpellNameFromId(spellId)
  if not spellName then return end
@@ -1350,7 +1342,7 @@ nampowerHandlers["DEBUFF_REMOVED_SELF"] = function()
  local spellId = arg3
 
  -- Only for player.
- if not IsPlayerGUID(unitGuid) then return end
+ if not IsPlayerGuid(unitGuid) then return end
 
  local spellName = GetSpellNameFromId(spellId)
  if not spellName then return end
