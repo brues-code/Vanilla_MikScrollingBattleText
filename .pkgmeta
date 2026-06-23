@@ -1,0 +1,10 @@
+package-as: MikScrollingBattleText
+
+enable-nolib-creation: no
+
+move-folders:
+  MikScrollingBattleText/MikScrollingBattleText: MikScrollingBattleText
+  MikScrollingBattleText/MikScrollingBattleTextOptions: MikScrollingBattleTextOptions
+
+ignore:
+  - README.md
