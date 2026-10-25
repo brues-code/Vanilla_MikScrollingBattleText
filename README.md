@@ -64,34 +64,28 @@ Interface/
 | `/msbt debug` | Toggle debug mode |
 | `/msbt help` | Show command usage |
 
-## Nampower Integration
+## ClassicAPI Combat Log Integration
 
-When Nampower is detected, MSBT automatically switches from string-based combat log parsing to structured event handling for significantly better performance in heavy combat scenarios (raids, AoE, battlegrounds).
+MSBT reads structured combat data from ClassicAPI's `COMBAT_LOG_EVENT_UNFILTERED` instead of relying on string-based combat log parsing alone, for significantly better performance in heavy combat scenarios (raids, AoE, battlegrounds).
 
 ### What Changes
 
-- **Nampower**: Registers for structured events (`SPELL_DAMAGE_EVENT_SELF`, `AUTO_ATTACK_SELF`, `SPELL_HEAL_ON_SELF`, etc.) that provide pre-parsed combat data. Redundant `CHAT_MSG_*` events are unregistered to avoid duplicates. Enables `NP_EnableAutoAttackEvents`, `NP_EnableSpellHealEvents`, and `NP_EnableSpellEnergizeEvents` CVars.
+- **ClassicAPI combat log**: Registers for the unfiltered combat log (`SPELL_DAMAGE`, `SWING_DAMAGE`, `SPELL_HEAL`, `SPELL_ENERGIZE`, `SPELL_MISSED`, `SPELL_AURA_APPLIED`, `ENVIRONMENTAL_DAMAGE`, `PARTY_KILL`, etc.) which carries pre-parsed amounts, GUIDs, crit flags, miss types and spell info. Redundant `CHAT_MSG_*` events are unregistered to avoid duplicates. No opt-in CVars are needed.
+- **SpellId icons**: SpellIds from combat log events resolve icons directly through ClassicAPI's `GetSpellInfo`, bypassing Babble-Spell dictionary lookups and tooltip scanning.
 
-### Removed: SuperWoW / UnitXP SP3
+### Removed: SuperWoW / UnitXP SP3 / Nampower
 
-SuperWoW and UnitXP SP3 integration has been removed in favor of ClassicAPI (for spell/item lookups) and Nampower (for structured combat events). GUID and unit-name resolution now go through Nampower APIs, and spell/item icon and name resolution through ClassicAPI.
+SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of ClassicAPI (for spell/item lookups, GUIDs and structured combat events). ClassicAPI is a hard dependency (see the `.toc`).
 
 ### Fallback
 
-When Nampower is not present, the addon falls back to the original string-parsing pipeline with no changes in behavior.
-
-### Verification
-
-```lua
--- Check detection status in-game:
-/run MikSBT.Print("NP="..tostring(MikCEH.hasNampower))
-```
+`CHAT_MSG_*` parsing stays registered for everything with no combat log equivalent (honor, reputation, skill, XP, item enchantments, some power gains/losses) and as a fallback until each combat log event actually fires.
 
 ## Performance Optimizations
 
 - **Upvalue caching**: Frequently called standard library functions (`string.find`, `string.gsub`, `table.insert`, `table.getn`, `GetTime`, etc.) are cached as local variables
 - **Dispatch table**: Combat event routing uses O(1) table lookup instead of an if/elseif chain
-- **SpellId icon cache**: When spellIds are available (via Nampower/SuperWoW), icons are resolved directly and cached, bypassing Babble-Spell dictionary lookups and tooltip scanning
+- **SpellId icon cache**: SpellIds from combat log events resolve icons directly through ClassicAPI and are cached, bypassing Babble-Spell dictionary lookups and tooltip scanning
 - **Event throttling**: UNIT_HEALTH and UNIT_MANA trigger checks are throttled to 150ms intervals
 - **Table recycling**: `MikTRO` (Table Recycler Object) pools and reuses table allocations to reduce garbage collection pressure
 
@@ -108,9 +102,9 @@ When Nampower is not present, the addon falls back to the original string-parsin
 ### Event Processing Pipeline
 
 ```
-WoW CHAT_MSG_* events (or Nampower structured events)
-  -> MikCEH.OnEvent() / MikCEH.OnNampowerEvent()
-  -> ParseCombatEvents() dispatch table (or Nampower handler)
+WoW CHAT_MSG_* events (or ClassicAPI COMBAT_LOG_EVENT_UNFILTERED)
+  -> MikCEH.OnEvent() / MikCEH.OnCombatLogEvent()
+  -> ParseCombatEvents() dispatch table (or combat log handler)
   -> Creates CombatEventData tables
   -> MikSBT.CombatEventsHandler()
   -> Formats text with templates (%a=amount, %n=name, %s=spell, %t=type)

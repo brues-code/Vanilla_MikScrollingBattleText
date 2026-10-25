@@ -1,4 +1,4 @@
-﻿-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
 -- Title: Mik's Scrolling Battle Text
 -- Author: Mik
 -- Maintainer: Athene
@@ -523,13 +523,6 @@ function MikSBT.Init()
 
  -- Register the triggers with the combat event helper.
  MikSBT.RegisterTriggers();
-
- -- Enable Nampower CVars for enhanced combat events when available.
- if MikCEH.hasNampower then
-  pcall(SetCVar, "NP_EnableAutoAttackEvents", "1")
-  pcall(SetCVar, "NP_EnableSpellHealEvents", "1")
-  pcall(SetCVar, "NP_EnableSpellEnergizeEvents", "1")
- end
 
  -- Disable or enable the mod depending on the saved setting.
  MikSBT.SetOptionUserDisabled(MikSBT_Save.UserDisabled)
@@ -1403,7 +1396,7 @@ function MikSBT.UpdateProfiles()
   end
 
   if (profile.CreationVersion < 4.6) then
-   -- Add missing incoming evade/reflect event settings (needed for Nampower events).
+   -- Add missing incoming evade/reflect event settings (needed for combat log miss events).
    local incomingMissEvents = {
     "MSBT_EVENTTYPE_INCOMING_EVADE",
     "MSBT_EVENTTYPE_INCOMING_SPELL_EVADE",
@@ -1838,12 +1831,9 @@ function MikSBT.AddAnimation(animationEvent)
   local sid = animationEvent.SpellId
   if spellIdIconCache[sid] then
    texture = spellIdIconCache[sid]
-  elseif MikCEH.hasNampower and GetSpellRecField and GetSpellIconTexture then
-   local ok, iconId = pcall(GetSpellRecField, sid, "spellIconID")
-   if ok and iconId then
-    local ok2, tex = pcall(GetSpellIconTexture, iconId)
-    if ok2 and tex then texture = tex; spellIdIconCache[sid] = tex end
-   end
+  elseif GetSpellInfo then
+   local ok, _, _, tex = pcall(GetSpellInfo, sid)
+   if ok and tex then texture = tex; spellIdIconCache[sid] = tex end
   end
  end
 
@@ -1857,14 +1847,11 @@ function MikSBT.AddAnimation(animationEvent)
 	 elseif not texture and MikSBT.GetAuraIcon(name) then
 		texture = MikSBT.GetAuraIcon(name)
 		ICON_CACHE[lowerName] = texture
-	 elseif not texture and MikCEH.hasNampower and GetSpellIdForName then
-		local ok, sid = pcall(GetSpellIdForName, name)
+	 elseif not texture and GetSpellInfo then
+		local ok, sid = pcall(function(n) return select(10, GetSpellInfo(n)) end, name)
 		if ok and sid and sid ~= 0 then
-			local ok2, iconId = pcall(GetSpellRecField, sid, "spellIconID")
-			if ok2 and iconId then
-				local ok3, tex = pcall(GetSpellIconTexture, iconId)
-				if ok3 and tex then texture = tex; ICON_CACHE[lowerName] = tex end
-			end
+			local ok2, _, _, tex = pcall(GetSpellInfo, sid)
+			if ok2 and tex then texture = tex; ICON_CACHE[lowerName] = tex end
 		end
 	 elseif not texture then
 		local itemIcon = MikSBT.FindItemIcon(lowerName)
