@@ -171,6 +171,9 @@ local STICKY_FADE_OUT_TIME = 0.5;
 -- The animation speed.
 local ANIMATION_SPEED = 0.02;
 
+-- Inline icon escape after the path: font-height square, cropped to the inner 48x48 of the 64x64 icon.
+local ICON_ESCAPE_SUFFIX = ":0:0:0:0:64:64:8:56:8:56|t ";
+
 -- Scroll directions
 local SCROLL_DIRECTION_UP			= 1;
 local SCROLL_DIRECTION_DOWN			= 2;
@@ -1817,11 +1820,6 @@ function MikSBT.AddAnimation(animationEvent)
   animDisplayInfo.FontObject:SetFont("Fonts\\FRIZQT__.TTF", fontSize-1, animDisplayInfo.FontOutline);
  end
  animDisplayInfo.FontObject:SetTextColor(animDisplayInfo.ColorR, animDisplayInfo.ColorG, animDisplayInfo.ColorB);
- animDisplayInfo.FontObject:SetText(animationEvent.Text);
- animDisplayInfo.FontObject:SetTextHeight(animDisplayInfo.FontSize);
- animDisplayInfo.FontObject:SetAlpha(animDisplayInfo.Alpha);
- animDisplayInfo.FontObject:SetPoint(animDisplayInfo.AnchorPoint, animDisplayInfo.PositionX, animDisplayInfo.PositionY);
- 
  -- Athene Edit - Spell Icon
  local texture
  if animationEvent.Texture then texture = animationEvent.Texture end
@@ -1864,25 +1862,17 @@ function MikSBT.AddAnimation(animationEvent)
 	 end
  end
  
+ -- Prefix the icon as an inline texture sized to the font height and cropped to the icon border.
+ local text = animationEvent.Text
  if texture then
-  -- local frame
-  if not animDisplayInfo.Texture then
-	-- on creer une nouvelle texture
-	animDisplayInfo.Texture = getglobal(animationEvent.ScrollArea.AssociatedFrame):CreateTexture(nil, "ARTWORK")
-  end
-	-- on réutilise une texture existante
-  animDisplayInfo.Texture:ClearAllPoints();
-  animDisplayInfo.Texture:SetTexture(nil);
-  animDisplayInfo.Texture:SetTexture(texture);
-  animDisplayInfo.Texture:SetWidth(animDisplayInfo.FontSize);
-  animDisplayInfo.Texture:SetHeight(animDisplayInfo.FontSize);
-  animDisplayInfo.Texture:SetTexCoord(0.125, 0.875, 0.125, 0.875)
-  animDisplayInfo.Texture:SetPoint("RIGHT", animDisplayInfo.FontObject, "LEFT", -4, 0);
-  animDisplayInfo.Texture:SetDrawLayer(animDisplayInfo.IsSticky and "OVERLAY" or animDisplayInfo.IsCrit and "OVERLAY" or "ARTWORK");
- elseif animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetTexture(nil);
+  text = "|T" .. texture .. ICON_ESCAPE_SUFFIX .. text
  end
- 
+
+ animDisplayInfo.FontObject:SetText(text);
+ animDisplayInfo.FontObject:SetTextHeight(animDisplayInfo.FontSize);
+ animDisplayInfo.FontObject:SetAlpha(animDisplayInfo.Alpha);
+ animDisplayInfo.FontObject:SetPoint(animDisplayInfo.AnchorPoint, animDisplayInfo.PositionX, animDisplayInfo.PositionY);
+
 
  -- Set the last update to the current time.
  animDisplayInfo.LastUpdated = GetTime();
@@ -2351,18 +2341,9 @@ function MikSBT.DoAnimation(animDisplayInfo, scrollArea)
    local textDelta = animDisplayInfo.FontSize * (1 - (elapsedTime / STICKY_FADE_IN_TIME));
    animDisplayInfo.FontObject:SetTextHeight(animDisplayInfo.FontSize + textDelta);
    animDisplayInfo.FontObject:SetAlpha(1);
-   if animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetAlpha(1);
-	animDisplayInfo.Texture:SetWidth(animDisplayInfo.FontSize + textDelta);
-    animDisplayInfo.Texture:SetHeight(animDisplayInfo.FontSize + textDelta);
-  end
    return;
   elseif (elapsedTime <= (STICKY_DISPLAY_TIME + STICKY_FADE_IN_TIME)) then
    animDisplayInfo.FontObject:SetTextHeight(animDisplayInfo.FontSize);
-   if animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetWidth(animDisplayInfo.FontSize);
-    animDisplayInfo.Texture:SetHeight(animDisplayInfo.FontSize);
-  end
      if animDisplayInfo.IsCrit then
 	  if not animDisplayInfo.timeLastJiggled then
 			animDisplayInfo.originalPositionX = animDisplayInfo.PositionX
@@ -2389,17 +2370,11 @@ function MikSBT.DoAnimation(animDisplayInfo, scrollArea)
    local alpha = 1 - ((elapsedTime - STICKY_DISPLAY_TIME - STICKY_FADE_IN_TIME) / STICKY_FADE_OUT_TIME);
    animDisplayInfo.timeLastJiggled = nil
    animDisplayInfo.FontObject:SetAlpha(alpha);
-   if animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetAlpha(alpha);
-  end
    return;
   end
 
   -- Deactivate the animation.
   animDisplayInfo.FontObject:SetAlpha(0);
-  if animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetAlpha(0);
-  end
   animDisplayInfo.IsActive = false;
 
   return;
@@ -2408,17 +2383,15 @@ function MikSBT.DoAnimation(animDisplayInfo, scrollArea)
 
  -- Check if it's time to update.
  if (elapsedTime > ANIMATION_SPEED) then
-  -- Scroll the text and set its alpha appropriately.
-  local animationComplete = animDisplayInfo.ScrollFunction(animDisplayInfo, scrollArea);
+  -- Scroll the text by the step scaled to the elapsed time so the speed doesn't depend on the framerate.
+  local step = MikSBT.CurrentProfile.AnimationStep * elapsedTime / ANIMATION_SPEED;
+  local animationComplete = animDisplayInfo.ScrollFunction(animDisplayInfo, scrollArea, step);
 
 
   -- Check if the animation is complete.
   if (animationComplete) then
    -- Set the font object's alpha.
    animDisplayInfo.FontObject:SetAlpha(0);
-   if animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetAlpha(0);
-   end
 
    -- Deactive the animation.
    animDisplayInfo.IsActive = false;
@@ -2426,9 +2399,6 @@ function MikSBT.DoAnimation(animDisplayInfo, scrollArea)
    -- Move the font object and set its alpha.
    animDisplayInfo.FontObject:SetPoint(animDisplayInfo.AnchorPoint, animDisplayInfo.PositionX, animDisplayInfo.PositionY);
    animDisplayInfo.FontObject:SetAlpha(animDisplayInfo.Alpha);
-   if animDisplayInfo.Texture then
-	animDisplayInfo.Texture:SetAlpha(animDisplayInfo.Alpha);
-   end
   end
 
   -- Set the last update to the current time.
@@ -2441,12 +2411,12 @@ end
 -- Moves the passed animation display info upward and fades the alpha correctly.
 -- Returns true when the animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollUp(animDisplayInfo, scrollArea)
+function MikSBT.ScrollUp(animDisplayInfo, scrollArea, step)
  -- Calculate the animation midpoint.
  local animationMidPoint = scrollArea.DisplaySettings.ScrollHeight / 2;
 
  -- Increment the Y position by the step.
- animDisplayInfo.PositionY = animDisplayInfo.PositionY + MikSBT.CurrentProfile.AnimationStep;
+ animDisplayInfo.PositionY = animDisplayInfo.PositionY + step;
 
  -- Start fading out the text on the upper half.
  if (animDisplayInfo.PositionY >= animationMidPoint) then
@@ -2470,12 +2440,12 @@ end
 -- Moves the passed animation display info downward and fades the alpha correctly.
 -- Returns true when the animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollDown(animDisplayInfo, scrollArea)
+function MikSBT.ScrollDown(animDisplayInfo, scrollArea, step)
  -- Calculate the animation midpoint.
  local animationMidPoint = scrollArea.DisplaySettings.ScrollHeight / 2;
 
  -- Decrement the Y position by the step.
- animDisplayInfo.PositionY = animDisplayInfo.PositionY - MikSBT.CurrentProfile.AnimationStep;
+ animDisplayInfo.PositionY = animDisplayInfo.PositionY - step;
 
  -- Start fading out the text on the bottom half.
  if (animDisplayInfo.PositionY < animationMidPoint) then
@@ -2499,9 +2469,9 @@ end
 -- Moves the passed animation display info straight up. Returns true when the
 -- animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollStraightUp(animDisplayInfo, scrollArea)
+function MikSBT.ScrollStraightUp(animDisplayInfo, scrollArea, step)
  -- Returns the result of the scroll up function.
- return MikSBT.ScrollUp(animDisplayInfo, scrollArea);
+ return MikSBT.ScrollUp(animDisplayInfo, scrollArea, step);
 end
 
 
@@ -2509,9 +2479,9 @@ end
 -- Moves the passed animation display info straight down.  Returns true when the
 -- animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollStraightDown(animDisplayInfo, scrollArea)
+function MikSBT.ScrollStraightDown(animDisplayInfo, scrollArea, step)
  -- Returns the result of the scroll down function.
- return MikSBT.ScrollDown(animDisplayInfo, scrollArea);
+ return MikSBT.ScrollDown(animDisplayInfo, scrollArea, step);
 end
 
 
@@ -2519,9 +2489,9 @@ end
 -- Moves the passed animation display info in a left parabolic shape going upwards.
 -- Returns true when the animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollLeftParabolaUp(animDisplayInfo, scrollArea)
+function MikSBT.ScrollLeftParabolaUp(animDisplayInfo, scrollArea, step)
  -- Scroll the animation display info straight up and set the alpha correctly.
- local animationComplete = MikSBT.ScrollUp(animDisplayInfo, scrollArea);
+ local animationComplete = MikSBT.ScrollUp(animDisplayInfo, scrollArea, step);
 
  -- Calculate the animation midpoint.
  local animationMidPoint = scrollArea.DisplaySettings.ScrollHeight / 2;
@@ -2544,9 +2514,9 @@ end
 -- Moves the passed animation display info in a left parabolic shape going downwards.
 -- Returns true when the animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollLeftParabolaDown(animDisplayInfo, scrollArea)
+function MikSBT.ScrollLeftParabolaDown(animDisplayInfo, scrollArea, step)
  -- Scroll the animation display info straight up and set the alpha correctly.
- local animationComplete = MikSBT.ScrollDown(animDisplayInfo, scrollArea);
+ local animationComplete = MikSBT.ScrollDown(animDisplayInfo, scrollArea, step);
 
  -- Calculate the animation midpoint.
  local animationMidPoint = scrollArea.DisplaySettings.ScrollHeight / 2;
@@ -2569,9 +2539,9 @@ end
 -- Moves the passed animation display info in a right parabolic shape going upwards.
 -- Returns true when the animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollRightParabolaUp(animDisplayInfo, scrollArea)
+function MikSBT.ScrollRightParabolaUp(animDisplayInfo, scrollArea, step)
  -- Scroll the animation display info straight up and set the alpha correctly.
- local animationComplete = MikSBT.ScrollUp(animDisplayInfo, scrollArea);
+ local animationComplete = MikSBT.ScrollUp(animDisplayInfo, scrollArea, step);
 
  -- Calculate the animation midpoint.
  local animationMidPoint = scrollArea.DisplaySettings.ScrollHeight / 2;
@@ -2594,9 +2564,9 @@ end
 -- Moves the passed animation display info in a right parabolic shape going downwards.
 -- Returns true when the animation is complete.
 -- **********************************************************************************
-function MikSBT.ScrollRightParabolaDown(animDisplayInfo, scrollArea)
+function MikSBT.ScrollRightParabolaDown(animDisplayInfo, scrollArea, step)
  -- Scroll the animation display info straight up and set the alpha correctly.
- local animationComplete = MikSBT.ScrollDown(animDisplayInfo, scrollArea);
+ local animationComplete = MikSBT.ScrollDown(animDisplayInfo, scrollArea, step);
 
  -- Calculate the animation midpoint.
  local animationMidPoint = scrollArea.DisplaySettings.ScrollHeight / 2;
