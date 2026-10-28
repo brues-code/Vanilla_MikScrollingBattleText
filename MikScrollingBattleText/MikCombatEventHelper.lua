@@ -135,6 +135,9 @@ local RECENTLY_SELECTED_PLAYERS_HOLD_TIME = 45;
 -- Holds the events the helper is interested in receiving.
 local listenEvents = {};
 
+-- Frame that handles the helper's events.
+local eventFrame = CreateFrame("Frame");
+
 -- Holds formatted global strings.
 local globalStringInfoArray = {};
 
@@ -235,12 +238,12 @@ end
 function MikCEH.RegisterEvents()
  -- Register the events we are interested in receiving.
  for k, v in listenEvents do
-  MCEHEventFrame:RegisterEvent(v);
+  eventFrame:RegisterEvent(v);
  end
 
  -- Unit events only for the units the triggers watch, so raid members' updates never reach Lua.
- MCEHEventFrame:RegisterUnitEvent("UNIT_HEALTH", "player", "target", "pet");
- MCEHEventFrame:RegisterUnitEvent("UNIT_MANA", "player");
+ eventFrame:RegisterUnitEvent("UNIT_HEALTH", "player", "target", "pet");
+ eventFrame:RegisterUnitEvent("UNIT_MANA", "player");
 end
 
 
@@ -250,16 +253,16 @@ end
 function MikCEH.UnregisterEvents()
  -- Register the events we are interested in receiving.
  for k, v in listenEvents do
-  MCEHEventFrame:UnregisterEvent(v);
+  eventFrame:UnregisterEvent(v);
  end
 
- MCEHEventFrame:UnregisterEvent("UNIT_HEALTH");
- MCEHEventFrame:UnregisterEvent("UNIT_MANA");
+ eventFrame:UnregisterEvent("UNIT_HEALTH");
+ eventFrame:UnregisterEvent("UNIT_MANA");
 end
 
 
 -- **********************************************************************************
--- Called when the helper's event frame is loaded.
+-- Sets up the helper's events. Runs when this file loads.
 -- **********************************************************************************
 function MikCEH.OnLoad()
  -- Load up the listen events table with the events the helper is interested in.
@@ -314,7 +317,7 @@ function MikCEH.OnLoad()
  MikCEH.SetupCombatLogEvents();
 
  -- Register for the ADDON_LOADED event.
- MCEHEventFrame:RegisterEvent("ADDON_LOADED");
+ eventFrame:RegisterEvent("ADDON_LOADED");
 end
 
 
@@ -4675,3 +4678,8 @@ function MikCEH.ParseSearchPatternTriggers(event, combatMessage)
   end -- Loop through search patterns. 
  end -- Loop through triggers.
 end
+
+
+eventFrame:SetScript("OnEvent", MikCEH.OnEvent);
+eventFrame:SetScript("OnUpdate", MikCEH.OnUpdate);
+MikCEH.OnLoad();
