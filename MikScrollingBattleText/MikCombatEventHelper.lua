@@ -312,9 +312,8 @@ function MikCEH.OnLoad()
  -- Set up ClassicAPI combat log events and filter redundant CHAT_MSG events.
  MikCEH.SetupCombatLogEvents();
 
- -- Register for the ADDON_LOADED and PLAYER_ENTERING_WORLD events.
+ -- Register for the ADDON_LOADED event.
  MCEHEventFrame:RegisterEvent("ADDON_LOADED");
- MCEHEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
 end
 
 
@@ -335,14 +334,6 @@ function MikCEH.OnEvent()
 
    -- Initialize the helper object.
    MikCEH.Init();
-  end
-
- -- Retry playerGUID initialization when the player fully enters the world.
- elseif (event == "PLAYER_ENTERING_WORLD") then
-  this:UnregisterEvent("PLAYER_ENTERING_WORLD");
-  if not playerGUID then
-   local ok, guid = pcall(UnitGUID, "player")
-   if ok and guid then playerGUID = guid end
   end
 
  -- Leave Combat
@@ -653,9 +644,8 @@ function MikCEH.Init()
  playerName = UnitName("player");
  _, playerClass = UnitClass("player");
 
- -- Cache the player GUID (UnitGUID is provided by ClassicAPI).
- local ok, guid = pcall(UnitGUID, "player")
- if ok and guid then playerGUID = guid end
+ -- Cache the player GUID (ClassicAPI's UnitGUID is valid from ADDON_LOADED on).
+ playerGUID = UnitGUID("player");
 end
 
 
@@ -712,7 +702,6 @@ local combatLogPowerTypeToString = {
 -- Checks if the given GUID string belongs to the player.
 -- **********************************************************************************
 local function IsPlayerGUID(guid)
- if not guid or not playerGUID then return false end
  return guid == playerGUID
 end
 
@@ -721,10 +710,7 @@ end
 -- Checks if the given GUID belongs to the player's pet.
 -- **********************************************************************************
 local function IsPetGUID(guid)
- if not guid or not UnitExists("pet") then return false end
- local ok, petGuid = pcall(UnitGUID, "pet")
- if ok and petGuid then return guid == petGuid end
- return false
+ return guid ~= nil and guid == UnitGUID("pet")
 end
 
 
@@ -755,23 +741,9 @@ end
 
 
 -- **********************************************************************************
--- Ensures playerGUID is set. Called lazily by combat log event handlers since
--- UnitGUID("player") may still return nil during ADDON_LOADED before the
--- player unit is fully available.
--- **********************************************************************************
-local function EnsurePlayerGUID()
- if playerGUID then return true end
- local ok, guid = pcall(UnitGUID, "player")
- if ok and guid then playerGUID = guid; return true end
- return false
-end
-
-
--- **********************************************************************************
 -- Combat log event dispatcher — called by the combat log event frame's OnEvent.
 -- **********************************************************************************
 function MikCEH.OnCombatLogEvent()
- EnsurePlayerGUID()
  local handler = combatLogHandlers[arg2]
  if handler then handler() end
 end
