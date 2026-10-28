@@ -1227,195 +1227,29 @@ end
 -------------------------------------------------------------------------------------
 
 -- **********************************************************************************
--- Updates profiles created with older versions.
+-- Fills keys missing from target with copies of the defaults. Triggers and
+-- Suppressions are user lists: a missing entry there was deleted on purpose, so
+-- only the lists themselves are filled, never their entries.
+-- **********************************************************************************
+local USER_LISTS = {Triggers = true, Suppressions = true};
+
+local function FillMissingDefaults(target, defaults)
+ for key, value in defaults do
+  if (target[key] == nil) then
+   target[key] = (type(value) == "table") and MikSBT.CopyTable(value) or value;
+  elseif (type(value) == "table" and type(target[key]) == "table" and not USER_LISTS[key]) then
+   FillMissingDefaults(target[key], value);
+  end
+ end
+end
+
+
+-- **********************************************************************************
+-- Brings saved profiles up to date by adding settings introduced since they were created.
 -- **********************************************************************************
 function MikSBT.UpdateProfiles()
- -- Loop through all the profiles.
  for _, profile in MikSBT_Save.Profiles do
-
-  if not profile.CreationVersion then
-	-- There is an error in this Profile, we need to reset it.
-	MikSBT.ResetProfile(profile);
-  end
-  
-  -- Check if the profile was created prior to version 2.0.
-  if (profile.CreationVersion < 2.0) then
-   -- Update the profile's structure.
-   profile.ShowOverheals = MikSBT.DEFAULT_CONFIG.ShowOverheals;
-   profile.ShowGameDamage = MikSBT.DEFAULT_CONFIG.ShowGameDamage;
-   profile.UseStickyCrits = MikSBT.DEFAULT_CONFIG.UseStickyCrits;
-
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_SPELL_DOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_SPELL_DOT"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_HOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_HOT"]);
-   profile.EventSettings["MSBT_EVENTTYPE_OUTGOING_SPELL_DOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_OUTGOING_SPELL_DOT"]);
-   profile.EventSettings["MSBT_EVENTTYPE_OUTGOING_HOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_OUTGOING_HOT"]);
-
-   -- Update the creation version to the current version.
-   profile.CreationVersion = 2.0;
-  end
-
-
-  -- Check if the profile was created prior to version 2.1.
-  if (profile.CreationVersion < 2.1) then
-   -- Update the profile's structure.
-
-   -- Loop through all of the event settings.
-   for eventTypeName, eventType in profile.EventSettings do
-    -- Check for the event types that can't be crits and remove the crit settings table.
-    if (string_find(eventTypeName, "MISS") or string_find(eventTypeName, "DODGE") or string_find(eventTypeName, "PARRY") or
-        string_find(eventTypeName, "BLOCK") or string_find(eventTypeName, "ABSORB") or string_find(eventTypeName, "IMMUNE") or
-        string_find(eventTypeName, "DOT") or string_find(eventTypeName, "RESIST") or string_find(eventTypeName, "HOT") or
-        string_find(eventTypeName, "ENVIRONMENTAL") or string_find(eventTypeName, "EVADE") or string_find(eventTypeName, "NOTIFICATION")) then
-
-     -- Remove the crit settings table.
-     eventType.FontSettings.Crit = nil;
-    end
-
-    -- Check if the event type is a notification and add the IsSticky flag.
-    if (string_find(eventTypeName, "NOTIFICATION")) then
-     eventType.IsSticky = MikSBT.DEFAULT_CONFIG.EventSettings[eventTypeName].IsSticky;
-    end
-
-    -- Add event settings for experience gains.
-    profile.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_EXPERIENCE_GAIN"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_EXPERIENCE_GAIN"]);
-   end
-
-   -- Update the creation version to the current version.
-   profile.CreationVersion = 2.1;
-  end
-
-
-  -- Check if the profile was created prior to version 3.0.
-  if (profile.CreationVersion < 3.0) then
-   -- Remove the low health, low mana, and execute notification event settings since they are now triggers.
-   profile.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_LOW_HEALTH"] = nil;
-   profile.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_LOW_MANA"] = nil;
-   profile.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_EXECUTE"] = nil;
-
-   -- Remove the low health and low mana warning percentage info since they are now triggers.
-   profile.WarningPercentageHealth = nil;
-   profile.WarningPercentageMana = nil;
-
-
-   -- Update the profile's structure with triggers.
-   profile.Triggers = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.Triggers);
-
-   -- Add event settings for killing blows.
-   profile.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_PC_KILLING_BLOW"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_PC_KILLING_BLOW"]);
-   profile.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_NPC_KILLING_BLOW"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_NOTIFICATION_NPC_KILLING_BLOW"]);
-
-   -- Update the profile's structure with suppresions.
-   profile.Suppressions = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.Suppressions);
-
-   -- Update the creation version to the current version.
-   profile.CreationVersion = 3.0;
-  end
-
-  -- Check if the profile was created prior to version 4.0.
-  if (profile.CreationVersion < 4.0) then
-
-   profile.ShowAllManaGains = false;
-   profile.LowHealthSound = true;
-   profile.LowManaSound	 = true;
-
-   profile.CreationVersion = 4.0;
-  end
-
-  -- Check if the profile was created prior to version 4.1.
-  if (profile.CreationVersion < 4.1) then
-
-   if profile.Triggers.MSBT_TRIGGER_WINDFURY then -- Fix Windfury Trigger
-	   profile.Triggers.MSBT_TRIGGER_WINDFURY.TriggerSettings.SearchPatterns[1] = string.format(AURAADDEDSELFHELPFUL, string_gsub(C_Spell.GetSpellName(8512) or "", "-", "%%-"))  -- Windfury Totem (ID verified vs Spell.dbc)
-   end
-
-   if profile.Triggers.MSBT_TRIGGER_HAND_OF_JUSTICE then -- Delete Hand of Justice Trigger
-	   profile.Triggers["MSBT_TRIGGER_HAND_OF_JUSTICE"] = nil;
-   end
-
-   profile.CreationVersion = 4.1;
-  end
-
-  if (profile.CreationVersion < 4.3) then
-
-  -- The pet update !
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_DAMAGE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_DAMAGE"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_MISS"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_MISS"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_DODGE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_DODGE"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_PARRY"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_PARRY"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_BLOCK"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_BLOCK"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_ABSORB"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_ABSORB"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_IMMUNE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_IMMUNE"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_DAMAGE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_DAMAGE"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_DOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_DOT"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_MISS"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_MISS"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_DODGE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_DODGE"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_PARRY"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_PARRY"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_BLOCK"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_BLOCK"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_RESIST"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_RESIST"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_ABSORB"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_ABSORB"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_IMMUNE"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_SPELL_IMMUNE"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HEAL"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HEAL"]);
-   profile.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HOT"] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings["MSBT_EVENTTYPE_INCOMING_PET_HOT"]);
-
-   profile.CreationVersion = 4.3;
-  end
-
-  if (profile.CreationVersion < 4.4) then
-
-	 profile.BlizzardFontSettings = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.BlizzardFontSettings);
-
-  profile.CreationVersion = 4.4;
-  end
-
-  if (profile.CreationVersion < 4.5) then
-
-   -- Add missing outgoing pet event settings (omitted from the 4.3 migration).
-   local petOutgoingEvents = {
-    "MSBT_EVENTTYPE_OUTGOING_PET_DAMAGE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_MISS",
-    "MSBT_EVENTTYPE_OUTGOING_PET_DODGE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_PARRY",
-    "MSBT_EVENTTYPE_OUTGOING_PET_BLOCK",
-    "MSBT_EVENTTYPE_OUTGOING_PET_ABSORB",
-    "MSBT_EVENTTYPE_OUTGOING_PET_IMMUNE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_EVADE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_DAMAGE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_MISS",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_DODGE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_PARRY",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_BLOCK",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_RESIST",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_ABSORB",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_IMMUNE",
-    "MSBT_EVENTTYPE_OUTGOING_PET_SPELL_EVADE",
-   };
-   for _, evtName in petOutgoingEvents do
-    if not profile.EventSettings[evtName] and MikSBT.DEFAULT_CONFIG.EventSettings[evtName] then
-     profile.EventSettings[evtName] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings[evtName]);
-    end
-   end
-
-   profile.CreationVersion = 4.5;
-  end
-
-  if (profile.CreationVersion < 4.6) then
-   -- Add missing incoming evade/reflect event settings (needed for combat log miss events).
-   local incomingMissEvents = {
-    "MSBT_EVENTTYPE_INCOMING_EVADE",
-    "MSBT_EVENTTYPE_INCOMING_SPELL_EVADE",
-    "MSBT_EVENTTYPE_INCOMING_PET_EVADE",
-    "MSBT_EVENTTYPE_INCOMING_PET_SPELL_EVADE",
-    "MSBT_EVENTTYPE_INCOMING_PET_SPELL_REFLECT",
-   };
-   for _, evtName in incomingMissEvents do
-    if not profile.EventSettings[evtName] and MikSBT.DEFAULT_CONFIG.EventSettings[evtName] then
-     profile.EventSettings[evtName] = MikSBT.CopyTable(MikSBT.DEFAULT_CONFIG.EventSettings[evtName]);
-    end
-   end
-
-   profile.CreationVersion = 4.6;
-  end
-
+  FillMissingDefaults(profile, MikSBT.DEFAULT_CONFIG);
  end
 end
 

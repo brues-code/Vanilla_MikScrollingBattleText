@@ -6,15 +6,18 @@
 
 -- Create "namespace."
 MikSBT = {};
-
+local addonName, addonTable = ...
 -------------------------------------------------------------------------------
 -- Mod Constants
 -------------------------------------------------------------------------------
 
-MikSBT.MOD_NAME		= "MikScrollingBattleText"
-MikSBT.VERSION_NUMBER	= 4.43;
-MikSBT.VERSION_STRING	= "v4.43 beta";
-MikSBT.WINDOW_TITLE	= "Mik's Scrolling Battle Text " .. MikSBT.VERSION_STRING .. " - \124cffF58CBA\124hAthene Edit\124h\124r";
+MikSBT.MOD_NAME		= addonName
+
+-- The packager fills in the .toc version ("v4.45"); an unpackaged checkout still has the
+-- "@project-version@" placeholder.
+local version = GetAddOnMetadata(addonName, "Version");
+MikSBT.VERSION_STRING	= string.find(version, "^@") and "dev" or version;
+MikSBT.WINDOW_TITLE	= "Mik's Scrolling Battle Text " .. MikSBT.VERSION_STRING .. " - \124cffF58CBA\124hClassicAPI Edition\124h\124r";
 
 MikSBT.COMMAND		= "/msbt";
 
@@ -206,7 +209,6 @@ MikSBT.DEFAULT_PROFILE_NAME = "Default";
 -- %s = name of the spell, ability, buff, debuff, power type, etc.
 -- %t = damage type
 MikSBT.DEFAULT_CONFIG = {
- CreationVersion 					= MikSBT.VERSION_NUMBER,
  ShowPartialEffects				= true,
  ShowOverheals					= true,
  ShowGameDamage					= false,
