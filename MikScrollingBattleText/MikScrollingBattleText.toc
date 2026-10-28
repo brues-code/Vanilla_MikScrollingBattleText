@@ -19,4 +19,3 @@ localization.lua
 MikCombatEventHelper.lua
 MikScrollingBattleText.lua
 MikCombatEventHelper.xml
-MikScrollingBattleText.xml

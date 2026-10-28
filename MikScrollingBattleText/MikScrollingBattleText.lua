@@ -219,6 +219,9 @@ local listenEvents = {};
 -- Holds data for each scroll area.
 local scrollAreas = {};
 
+-- Frame that handles the core events.
+local eventFrame = CreateFrame("Frame");
+
 -- Holds arrays of unmerged events, merged events to be displayed and the time since
 -- the last merge for incoming and outgoing events.
 local animationMergeData = {
@@ -273,7 +276,7 @@ end
 function MikSBT.RegisterEvents()
  -- Register the events we are interested in receiving for shaman.
  for k, v in listenEvents do
-  MSBTEventFrame:RegisterEvent(v);
+  eventFrame:RegisterEvent(v);
  end
 end
 
@@ -283,19 +286,10 @@ end
 -- **********************************************************************************
 function MikSBT.UnregisterEvents()
  for k, v in listenEvents do
-  MSBTEventFrame:UnregisterEvent(v);
+  eventFrame:UnregisterEvent(v);
  end
 end
 
-
--- **********************************************************************************
--- Called when the mod is loaded.
--- **********************************************************************************
-function MikSBT.OnLoad()
- -- Register for the ADDON_LOADED event.
- MSBTEventFrame:RegisterEvent("ADDON_LOADED");
- MSBTEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
-end
 
 -- **********************************************************************************
 -- Called when the events we registered for occur.
@@ -369,22 +363,18 @@ function MikSBT.OnUpdate()
  end
 end
 
+eventFrame:SetScript("OnEvent", MikSBT.OnEvent);
+eventFrame:SetScript("OnUpdate", MikSBT.OnUpdate);
+eventFrame:RegisterEvent("ADDON_LOADED");
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
+
 
 -- **********************************************************************************
 -- Called when the mod's animation frames are updated.
 -- **********************************************************************************
-function MikSBT.OnUpdateAnimationFrame(frame)
- local scrollArea;
-
- -- Get the frame's name.
- local frameName = frame:GetName();
- if (frameName == scrollAreas.Incoming.AssociatedFrame) then
-  scrollArea = scrollAreas.Incoming;
- elseif (frameName == scrollAreas.Outgoing.AssociatedFrame) then
-  scrollArea = scrollAreas.Outgoing;
- elseif (frameName == scrollAreas.Notification.AssociatedFrame) then
-  scrollArea = scrollAreas.Notification;
- end
+function MikSBT.OnUpdateAnimationFrame()
+ local frame = this;
+ local scrollArea = frame.ScrollArea;
 
  -- Flag for whether or not all the animations are inactive.
  local allInactive = true;
@@ -460,11 +450,6 @@ function MikSBT.SetupAnimationScrollAreas()
  scrollAreas.Outgoing = {};
  scrollAreas.Notification = {};
 
- -- Setup the associated frames.
- scrollAreas.Incoming.AssociatedFrame = "MSBTFrameIncoming";
- scrollAreas.Outgoing.AssociatedFrame = "MSBTFrameOutgoing";
- scrollAreas.Notification.AssociatedFrame = "MSBTFrameNotification";
-
  -- Setup the display settings.
  scrollAreas.Incoming.DisplaySettings = MikSBT.CurrentProfile.DisplaySettings.Incoming;
  scrollAreas.Outgoing.DisplaySettings = MikSBT.CurrentProfile.DisplaySettings.Outgoing;
@@ -480,13 +465,22 @@ function MikSBT.SetupAnimationScrollAreas()
   scrollArea.FirstSticky = 11;
   scrollArea.NextSticky = scrollArea.FirstSticky;
 
-  -- Create arrays for the animation display info.
-  scrollArea.AnimationDisplayArray = {};
+  -- Create the scroll area's frame. It stays hidden while nothing animates so its OnUpdate doesn't run;
+  -- RepositionAnimationFrames anchors it.
+  local frame = CreateFrame("Frame", nil, UIParent);
+  frame:SetFrameStrata("HIGH");
+  frame:SetWidth(24);
+  frame:SetHeight(24);
+  frame:Hide();
+  frame.ScrollArea = scrollArea;
+  frame:SetScript("OnUpdate", MikSBT.OnUpdateAnimationFrame);
+  scrollArea.Frame = frame;
 
-  -- Associate the appropriate font string object for each animation display object.
+  -- Create a font string for each animation display object.
+  scrollArea.AnimationDisplayArray = {};
   for x = 1, NUM_FONT_STRINGS do
    scrollArea.AnimationDisplayArray[x] = {};
-   scrollArea.AnimationDisplayArray[x].FontObject = getglobal(scrollArea.AssociatedFrame .. "Text" .. x);
+   scrollArea.AnimationDisplayArray[x].FontObject = frame:CreateFontString(nil, "ARTWORK", "MasterFont");
    scrollArea.AnimationDisplayArray[x].LastUpdated = 0;
   end
  end
@@ -499,7 +493,7 @@ end
 function MikSBT.RepositionAnimationFrames()
  -- Loop through each scroll area and reposition its associated frame.
  for _, scrollArea in scrollAreas do
-  getglobal(scrollArea.AssociatedFrame):SetPoint("BOTTOM", "UIParent", "CENTER", scrollArea.DisplaySettings.FrameOffsets.x, scrollArea.DisplaySettings.FrameOffsets.y);
+  scrollArea.Frame:SetPoint("BOTTOM", "UIParent", "CENTER", scrollArea.DisplaySettings.FrameOffsets.x, scrollArea.DisplaySettings.FrameOffsets.y);
  end
 end
 
@@ -1607,8 +1601,8 @@ function MikSBT.AddAnimation(animationEvent)
 
  -- Check if the scroll area's display frame is not visible and make it visible so the OnUpdate events start firing.
  -- This is done to keep the number of OnUpdate events down to a minimum for better performance.
- if (not getglobal(animationEvent.ScrollArea.AssociatedFrame):IsVisible()) then
-  getglobal(animationEvent.ScrollArea.AssociatedFrame):Show();
+ if (not animationEvent.ScrollArea.Frame:IsVisible()) then
+  animationEvent.ScrollArea.Frame:Show();
  end
 
  -- Check if it's a sticky or a crit and sticky crits are enabled.
