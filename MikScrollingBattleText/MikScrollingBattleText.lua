@@ -8,10 +8,16 @@
 -- Public Constants.
 -------------------------------------------------------------------------------------
 
+-- The combat event helper, private to this addon.
+local _, addonTable = ...
+local MikCEH = addonTable.MikCEH;
+
+-- The search pattern trigger type, for the options addon.
+MikSBT.TRIGGERTYPE_SEARCH_PATTERN = MikCEH.TRIGGERTYPE_SEARCH_PATTERN;
+
 -- Upvalue caches for frequently called functions.
 local string_find, string_gsub = string.find, string.gsub
-local table_insert, table_getn, table_remove = table.insert, table.getn, table.remove
-local table_setn = table.setn
+local table_insert, table_getn, table_wipe = table.insert, table.getn, table.wipe
 local math_ceil, math_floor, math_random = math.ceil, math.floor, math.random
 local GetTime = GetTime
 local getglobal = getglobal
@@ -347,11 +353,7 @@ function MikSBT.OnUpdate()
    end
 
    -- Clear the merged animation events array.
-   local numMergedEvents = table_getn(mergeData.MergedEvents);
-   for i = 1, numMergedEvents do
-    mergeData.MergedEvents[i] = nil;
-   end
-   table_setn(mergeData.MergedEvents, 0);
+   table_wipe(mergeData.MergedEvents);
 
 
    -- Reset the last merged time.
@@ -829,10 +831,8 @@ function MikSBT.MergeEvents(mergeData, numEvents)
    -- Release the animation event table to the events pool.
    eventsPool:Release(mergeData.UnmergedEvents[x]);
   end
-
-  mergeData.UnmergedEvents[x] = nil;
  end
- table_setn(mergeData.UnmergedEvents, 0);
+ table_wipe(mergeData.UnmergedEvents);
 end
 
 
@@ -1951,10 +1951,7 @@ function MikSBT.RepositionAnimDisplayInfo(scrollArea)
  end -- Animation Style
 
  -- Clear the temp non stickies table.
- for x = 1, numNonStickies do
-  activeNonStickies[x] = nil;
- end
- table_setn(activeNonStickies, 0);
+ table_wipe(activeNonStickies);
 end
 
 
@@ -2034,10 +2031,7 @@ function MikSBT.RepositionStickyAnimDisplayInfo(scrollArea)
  end -- Animation Style
 
  -- Clear the temp stickies table.
- for x = 1, numStickies do
-  activeStickies[x] = nil;
- end
- table_setn(activeStickies, 0);
+ table_wipe(activeStickies);
 end
 
 

@@ -4,18 +4,20 @@
 -- Maintainer: Athene
 -------------------------------------------------------------------------------------
 
--- Create "namespace."
-MikCEH = {};
+-- Create "namespace." It is private to MikScrollingBattleText and shared through the addon table.
+local _, addonTable = ...
+local MikCEH = {};
+addonTable.MikCEH = MikCEH;
 
 -- Upvalue caches for frequently called functions.
 local string_find, string_gsub = string.find, string.gsub
 local string_len, string_sub, string_gfind = string.len, string.sub, string.gfind
-local table_insert, table_getn, table_setn = table.insert, table.getn, table.setn
+local table_insert, table_getn, table_wipe = table.insert, table.getn, table.wipe
 local GetTime, UnitHealth, UnitHealthMax = GetTime, UnitHealth, UnitHealthMax
 local UnitMana, UnitManaMax, UnitName = UnitMana, UnitManaMax, UnitName
 local UnitIsPlayer, UnitIsFriend, UnitExists = UnitIsPlayer, UnitIsFriend, UnitExists
 local GetNumRaidMembers, GetNumPartyMembers = GetNumRaidMembers, GetNumPartyMembers
-local pairs, tonumber, type, pcall = pairs, tonumber, type, pcall
+local tonumber, type, pcall = tonumber, type, pcall
 
 -------------------------------------------------------------------------------------
 -- Public constants.
@@ -1152,10 +1154,7 @@ function MikCEH.SetupCombatLogEvents()
 
  -- Replace listenEvents with filtered list.
  -- Clear and repopulate to maintain the same table reference.
- for i = table_getn(listenEvents), 1, -1 do
-  listenEvents[i] = nil
- end
- table_setn(listenEvents, 0)
+ table_wipe(listenEvents)
  for _, eventName in filteredEvents do
   table_insert(listenEvents, eventName)
  end
@@ -4063,7 +4062,7 @@ function MikCEH.GetCapturedData(combatMessage, globalStringName, captureOrder)
  local stringFound = false;
 
  -- Erase old captured data.
- MikCEH.EraseTable(orderedCaptureData);
+ table_wipe(orderedCaptureData);
 
  -- Get the unordered capture data.
  local tempCapturedData = MikCEH.GetUnorderedCaptureDataTable(string_gfind(combatMessage, globalStringInfo.Search)());
@@ -4108,7 +4107,7 @@ end
 -- parameters passed.
 -- **********************************************************************************
 function MikCEH.GetUnorderedCaptureDataTable(c1, c2, c3, c4, c5, c6, c7, c8, c9)
- -- Assign directly by index instead of EraseTable + table_insert.
+ -- Assign directly by index instead of table_wipe + table_insert.
  unorderedCaptureData[1] = c1;
  unorderedCaptureData[2] = c2;
  unorderedCaptureData[3] = c3;
@@ -4190,7 +4189,7 @@ function MikCEH.GetDamageEventData(directionType, actionType, hitType, damageTyp
  local eventData = MikCEH.CombatEventData;
 
  -- Erase the combat event data table.
- MikCEH.EraseTable(eventData);
+ table_wipe(eventData);
 
 
  -- Populate the event data fields.
@@ -4216,7 +4215,7 @@ function MikCEH.GetHealEventData(directionType, healType, amount, effectName, na
  local eventData = MikCEH.CombatEventData;
 
  -- Erase the combat event data table.
- MikCEH.EraseTable(eventData);
+ table_wipe(eventData);
 
   -- Populate the event data fields.
  eventData.EventType = MikCEH.EVENTTYPE_HEAL;
@@ -4240,7 +4239,7 @@ function MikCEH.GetNotificationEventData(notificationType, amount, effectName, S
  local eventData = MikCEH.CombatEventData;
 
  -- Erase the combat event data table.
- MikCEH.EraseTable(eventData);
+ table_wipe(eventData);
 
  -- Populate the event data fields.
  eventData.EventType = MikCEH.EVENTTYPE_NOTIFICATION;
@@ -4336,21 +4335,6 @@ function MikCEH.SendEvent(eventData)
 end
 
 
--- **********************************************************************************
--- Erases the passed table without losing the reference to the original memory.
--- This helps prevent GC churn.
--- **********************************************************************************
-function MikCEH.EraseTable(t)
- -- Loop through all the keys in the table and clear it.
- for key in pairs(t) do
-  t[key] = nil;
- end
-
- -- Set the length of the table to 0.
- table_setn(t, 0);
-end
-
-
 -------------------------------------------------------------------------------------
 -- Trigger utility functions.
 -------------------------------------------------------------------------------------
@@ -4396,7 +4380,7 @@ function MikCEH.GetSearchTriggerEventData(triggerKey, capturedData)
  local eventData = MikCEH.TriggerEventData;
 
  -- Erase the trigger event data table.
- MikCEH.EraseTable(eventData);
+ table_wipe(eventData);
 
  -- Populate the trigger event data fields.
  eventData.TriggerKey = triggerKey;
@@ -4421,7 +4405,7 @@ function MikCEH.GetThresholdTriggerEventData(triggerKey, triggerAmount)
  local eventData = MikCEH.TriggerEventData;
 
  -- Erase the trigger event data table.
- MikCEH.EraseTable(eventData);
+ table_wipe(eventData);
 
  -- Populate the trigger event data fields.
  eventData.TriggerKey = triggerKey;
@@ -4489,12 +4473,12 @@ end
 -- **********************************************************************************
 function MikCEH.UnregisterAllTriggers()
  -- Erase the trigger arrays.
- MikCEH.EraseTable(selfHealthTriggers);
- MikCEH.EraseTable(selfManaTriggers);
- MikCEH.EraseTable(petHealthTriggers);
- MikCEH.EraseTable(enemyHealthTriggers);
- MikCEH.EraseTable(friendlyHealthTriggers);
- MikCEH.EraseTable(searchPatternTriggers);
+ table_wipe(selfHealthTriggers);
+ table_wipe(selfManaTriggers);
+ table_wipe(petHealthTriggers);
+ table_wipe(enemyHealthTriggers);
+ table_wipe(friendlyHealthTriggers);
+ table_wipe(searchPatternTriggers);
 end
 
 

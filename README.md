@@ -90,12 +90,12 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 
 ## Architecture
 
-### Global Namespaces
+### Namespaces
 
 | Namespace | Purpose |
 |---|---|
-| `MikSBT` | Main addon: display, animation, profiles, event routing, slash commands |
-| `MikCEH` | Combat Event Helper: parses combat events into structured data |
+| `MikSBT` | Global. Main addon: display, animation, profiles, event routing, slash commands, and the API the options addon and other addons use |
+| `MikCEH` | Private, shared through the addon table. Combat Event Helper: parses combat events into structured data |
 
 ### Event Processing Pipeline
 

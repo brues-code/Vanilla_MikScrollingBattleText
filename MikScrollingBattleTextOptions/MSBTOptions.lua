@@ -554,7 +554,7 @@ function MikSBTOpt.TriggerTypeDropdownOnClick(frameName)
  UIDropDownMenu_SetSelectedValue(getglobal(frameName), this.value);
 
  -- Setup the trigger controls appropriately depending on the trigger type.
- MikSBTOpt.SetupVariableTriggerControls(getglobal(frameName):GetParent().TriggerKey, this.value == MikCEH.TRIGGERTYPE_SEARCH_PATTERN);
+ MikSBTOpt.SetupVariableTriggerControls(getglobal(frameName):GetParent().TriggerKey, this.value == MikSBT.TRIGGERTYPE_SEARCH_PATTERN);
 end
 
 
@@ -3345,7 +3345,7 @@ function MikSBTOpt.ShowTriggerConfig(triggerKey)
   
   MikSBTOpt.PopulateEditbox(TRIGGER_CONFIGURATION_FRAME_NAME .. "IconNameEditbox", texture);
   -- Setup the trigger controls appropriately depending on the trigger type.
-  MikSBTOpt.SetupVariableTriggerControls(triggerKey, triggerData.TriggerSettings.TriggerType == MikCEH.TRIGGERTYPE_SEARCH_PATTERN);
+  MikSBTOpt.SetupVariableTriggerControls(triggerKey, triggerData.TriggerSettings.TriggerType == MikSBT.TRIGGERTYPE_SEARCH_PATTERN);
 
   -- Show the trigger settings.
   triggerFrame:Show();
@@ -3389,7 +3389,7 @@ function MikSBTOpt.SetupVariableTriggerControls(triggerKey, showSearch)
    if (not triggerFrame.SelectedTriggerEvents) then
     triggerFrame.SelectedTriggerEvents = {};
    else
-    MikCEH.EraseTable(triggerFrame.SelectedTriggerEvents);
+    table.wipe(triggerFrame.SelectedTriggerEvents);
    end
 
    -- Loop through all of the trigger events for the trigger.
@@ -3525,7 +3525,7 @@ function MikSBTOpt.SaveTriggerConfig()
    end
   
   -- Check if the trigger type is search pattern.
-  if (triggerData.TriggerSettings.TriggerType == MikCEH.TRIGGERTYPE_SEARCH_PATTERN) then
+  if (triggerData.TriggerSettings.TriggerType == MikSBT.TRIGGERTYPE_SEARCH_PATTERN) then
    -- Clear the threshold field.
    triggerData.TriggerSettings.Threshold = nil;
 
