@@ -70,7 +70,7 @@ MSBT reads structured combat data from ClassicAPI's `COMBAT_LOG_EVENT_UNFILTERED
 
 ### What Changes
 
-- **ClassicAPI combat log**: Registers for the unfiltered combat log (`SPELL_DAMAGE`, `SWING_DAMAGE`, `SPELL_HEAL`, `SPELL_ENERGIZE`, `SPELL_MISSED`, `SPELL_AURA_APPLIED`, `ENVIRONMENTAL_DAMAGE`, `PARTY_KILL`, etc.) which carries pre-parsed amounts, GUIDs, crit flags, miss types and spell info. Redundant `CHAT_MSG_*` events are unregistered to avoid duplicates. No opt-in CVars are needed.
+- **ClassicAPI combat log**: Registers for the unfiltered combat log (`SPELL_DAMAGE`, `SWING_DAMAGE`, `SPELL_HEAL`, `SPELL_ENERGIZE`, `SPELL_MISSED`, `SPELL_AURA_APPLIED`, `ENVIRONMENTAL_DAMAGE`, `PARTY_KILL`, etc.) which carries pre-parsed amounts, GUIDs, crit flags, miss types and spell info. It is the only source for combat events. No opt-in CVars are needed.
 - **Spell icons**: combat log events resolve icons from their SpellId with ClassicAPI's `C_Spell.GetSpellTexture`. Events with only a name fall back to the player's auras, spellbook and items; each name is looked up once.
 
 ### Removed: SuperWoW / UnitXP SP3 / Nampower
@@ -79,7 +79,7 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 
 ### Fallback
 
-`CHAT_MSG_*` parsing stays registered for everything with no combat log equivalent (honor, reputation, skill, XP, item enchantments, some power gains/losses) and as a fallback until each combat log event actually fires.
+`CHAT_MSG_*` messages are parsed only for what the combat log lacks (honor, reputation, skill, XP, item enchantments, power losses). All of them stay registered because search pattern triggers can match any of them.
 
 ## Performance Optimizations
 
@@ -100,7 +100,7 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 ### Event Processing Pipeline
 
 ```
-WoW CHAT_MSG_* events (or ClassicAPI COMBAT_LOG_EVENT_UNFILTERED)
+ClassicAPI COMBAT_LOG_EVENT_UNFILTERED (plus CHAT_MSG_* for triggers and non-combat notifications)
   -> MikCEH.OnEvent() / MikCEH.OnCombatLogEvent()
   -> ParseCombatEvents() dispatch table (or combat log handler)
   -> Creates CombatEventData tables
