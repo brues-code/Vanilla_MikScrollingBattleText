@@ -48,7 +48,7 @@ MikSBT.COMMAND_USAGE = {
  "  " .. MikSBT.COMMAND_DISABLE .. " - Disables the mod.",
  "  " .. MikSBT.COMMAND_ENABLE .. " - Enables the mod.",
  "  " .. MikSBT.COMMAND_SHOWVER .. " - Shows the current version.",
- "  " .. MikSBT.COMMAND_STATS .. " - Reports stats about table recycling.",
+ "  " .. MikSBT.COMMAND_STATS .. " - Reports how many pooled event tables are in use.",
  "  " .. MikSBT.COMMAND_SEARCH .. " filter - Sets a filter for searching event types.",
  "  " .. MikSBT.COMMAND_DEBUG .. " - Toggles debug mode.",
  "  " .. MikSBT.COMMAND_HELP .. " - Show the command usage.",

@@ -314,9 +314,9 @@ local stillMerging = false;
 local activeNonStickies = {};
 local activeStickies = {};
 
--- Create a new table recycler object that holds up to 40 table references
--- in primary cache.
-local eventsRecycler = MikTRO:NewRecyclerObject(40);
+-- Pool of animation event tables, reused to keep garbage (and 1.12's full-heap GC pauses) down.
+-- Every acquired table must be released exactly once.
+local eventsPool = CreateUnsecuredObjectPool(function() return {} end, function(_, t) table.wipe(t) end);
 
 
 -------------------------------------------------------------------------------------
@@ -589,8 +589,8 @@ end
 -- Receive combat events from Mik's combat event helper.
 -- **********************************************************************************
 function MikSBT.CombatEventsHandler(combatEvent)
- -- Get a recycled table from the events recycler object.
- local animationEvent = eventsRecycler:AcquireTable();
+ -- Get a table from the events pool.
+ local animationEvent = eventsPool:Acquire();
 
  -- Look up the scroll area and event type string via pre-built tables (no string concatenation).
  local dirType = combatEvent.DirectionType;
@@ -712,9 +712,9 @@ function MikSBT.CombatEventsHandler(combatEvent)
   -- Dispatch the event to the animation system.
   MikSBT.DispatchAnimationEvent(animationEvent);
  else
-  -- Print an error message and reclaim the animation event table to the table recycler.
+  -- Print an error message and release the animation event table to the events pool.
   MikSBT.Print("No profile data found for " .. eventTypeString, 1, 0, 0)
-  eventsRecycler:ReclaimTable(animationEvent);
+  eventsPool:Release(animationEvent);
  end
 end
 
@@ -724,15 +724,15 @@ end
 -- Receive trigger events from Mik's trigger helper.
 -- **********************************************************************************
 function MikSBT.TriggerHandler(triggerEvent)
- -- Get a recycled table from the events recycler object.
- local animationEvent = eventsRecycler:AcquireTable();
+ -- Get a table from the events pool.
+ local animationEvent = eventsPool:Acquire();
 
  -- Check if the trigger require a stance
  if (MikSBT.CurrentProfile.Triggers[triggerEvent.TriggerKey].TriggerSettings.Stance) then
 	local _,_,isActive = GetShapeshiftFormInfo(MikSBT.CurrentProfile.Triggers[triggerEvent.TriggerKey].TriggerSettings.Stance)
 	if not isActive then
-		-- Reclaim the animation event table to the table recycler.
-		eventsRecycler:ReclaimTable(animationEvent);
+		-- Release the animation event table to the events pool.
+		eventsPool:Release(animationEvent);
 		return
 	end
  end
@@ -751,9 +751,9 @@ function MikSBT.TriggerHandler(triggerEvent)
   -- Dispatch the event to the animation system.
   MikSBT.DispatchAnimationEvent(animationEvent);
  else
-  -- Print an error message and reclaim the animation event table to the table recycler.
+  -- Print an error message and release the animation event table to the events pool.
   MikSBT.Print("No profile data found for trigger key " .. triggerEvent.TriggerKey, 1, 0, 0);
-  eventsRecycler:ReclaimTable(animationEvent);  
+  eventsPool:Release(animationEvent);  
  end
 end
 
@@ -913,8 +913,8 @@ function MikSBT.MergeEvents(mergeData, numEvents)
  for x = 1, numEvents do
   -- Check if the event was merged into a different animation event.
   if (mergeData.UnmergedEvents[x] and mergeData.UnmergedEvents[x].EventMerged) then
-   -- Reclaim the animation event table to the events recycler.
-   eventsRecycler:ReclaimTable(mergeData.UnmergedEvents[x]);
+   -- Release the animation event table to the events pool.
+   eventsPool:Release(mergeData.UnmergedEvents[x]);
   end
 
   mergeData.UnmergedEvents[x] = nil;
@@ -1692,6 +1692,9 @@ function MikSBT.DispatchAnimationEvent(animationEvent)
   else
    MikSBT.AddAnimation(animationEvent);
   end
+ else
+  -- The event is hidden so release it.
+  eventsPool:Release(animationEvent);
  end
 end
 
@@ -1707,17 +1710,18 @@ function MikSBT.AddAnimation(animationEvent)
  for _, suppressionSettings in MikSBT.CurrentProfile.Suppressions do
   -- Check if the suppression's search pattern is a match.
   if (suppressionSettings.Enabled and (string_find(animationEvent.Text, suppressionSettings.SearchPattern))) then
-   -- Reclaim the animation event table to the events recycler and leave the function.
-   eventsRecycler:ReclaimTable(animationEvent);
+   -- Release the animation event table to the events pool and leave the function.
+   eventsPool:Release(animationEvent);
    return;
   elseif (suppressionSettings.Enabled and animationEvent.EffectName and string_find(animationEvent.EffectName, suppressionSettings.SearchPattern)) then
-   -- Reclaim the animation event table to the events recycler and leave the function.
-   eventsRecycler:ReclaimTable(animationEvent);
+   -- Release the animation event table to the events pool and leave the function.
+   eventsPool:Release(animationEvent);
    return;
   end
  end
  
  if animationEvent.EventType == "MSBT_EVENTTYPE_NOTIFICATION_POWER_GAIN" and animationEvent.EffectName ~= 0 and MikSBT.CurrentProfile.ShowAllManaGains then
+	eventsPool:Release(animationEvent);
 	return
  end
 
@@ -1896,8 +1900,8 @@ function MikSBT.AddAnimation(animationEvent)
   MikSBT.RepositionAnimDisplayInfo(animationEvent.ScrollArea);
  end
 
- -- Reclaim the animation event table to the events recycler.
- eventsRecycler:ReclaimTable(animationEvent);
+ -- Release the animation event table to the events pool.
+ eventsPool:Release(animationEvent);
 end
 
 -- **********************************************************************************
@@ -2682,8 +2686,8 @@ function MikSBT.CommandHandler(params)
   showUsage = false;
 
  elseif (currentParam == MikSBT.COMMAND_STATS) then
-  -- Print out stats about the event recycler.
-  eventsRecycler:PrintStats();
+  -- Print the number of event tables in use; a count that keeps growing while idle means a missed release.
+  MikSBT.Print("Event tables in use: " .. eventsPool:GetNumActive(), 1, 1, 1);
 
   -- Don't show the usage info.
   showUsage = false;
@@ -2816,8 +2820,8 @@ function MikSBT.DisplayMessage(message, displayType, isSticky, colorR, colorG, c
  end
 
 
- -- Get a recycled table from the events recycler object.
- local animationEvent = eventsRecycler:AcquireTable();
+ -- Get a table from the events pool.
+ local animationEvent = eventsPool:Acquire();
 
  -- Populate the animation event data.
  animationEvent.ScrollArea = scrollArea;

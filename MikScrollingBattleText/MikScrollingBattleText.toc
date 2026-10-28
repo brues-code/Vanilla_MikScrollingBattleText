@@ -16,7 +16,6 @@ MikScrollingBattleText-deDE.lua
 MikScrollingBattleText-ruRU.lua
 
 localization.lua
-MikTableRecyclerObject.lua
 MikCombatEventHelper.lua
 MikScrollingBattleText.lua
 MikCombatEventHelper.xml

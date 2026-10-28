@@ -59,7 +59,7 @@ Interface/
 | `/msbt disable` | Disable the addon |
 | `/msbt enable` | Enable the addon |
 | `/msbt version` | Show the current version |
-| `/msbt stats` | Report table recycling statistics |
+| `/msbt stats` | Report how many pooled event tables are in use |
 | `/msbt search <filter>` | Set a filter for searching event types |
 | `/msbt debug` | Toggle debug mode |
 | `/msbt help` | Show command usage |
@@ -87,7 +87,7 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 - **Dispatch table**: Combat event routing uses O(1) table lookup instead of an if/elseif chain
 - **SpellId icon cache**: SpellIds from combat log events resolve icons directly through ClassicAPI and are cached, bypassing Babble-Spell dictionary lookups and tooltip scanning
 - **Event throttling**: UNIT_HEALTH and UNIT_MANA trigger checks are throttled to 150ms intervals
-- **Table recycling**: `MikTRO` (Table Recycler Object) pools and reuses table allocations to reduce garbage collection pressure
+- **Table pooling**: Animation event tables come from a ClassicAPI object pool (`CreateUnsecuredObjectPool`) and are reused, so 1.12's stop-the-world GC runs less often
 
 ## Architecture
 
@@ -97,7 +97,6 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 |---|---|
 | `MikSBT` | Main addon: display, animation, profiles, event routing, slash commands |
 | `MikCEH` | Combat Event Helper: parses combat events into structured data |
-| `MikTRO` | Table Recycler Object: memory pool for table reuse |
 
 ### Event Processing Pipeline
 
