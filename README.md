@@ -71,7 +71,7 @@ MSBT reads structured combat data from ClassicAPI's `COMBAT_LOG_EVENT_UNFILTERED
 ### What Changes
 
 - **ClassicAPI combat log**: Registers for the unfiltered combat log (`SPELL_DAMAGE`, `SWING_DAMAGE`, `SPELL_HEAL`, `SPELL_ENERGIZE`, `SPELL_MISSED`, `SPELL_AURA_APPLIED`, `ENVIRONMENTAL_DAMAGE`, `PARTY_KILL`, etc.) which carries pre-parsed amounts, GUIDs, crit flags, miss types and spell info. Redundant `CHAT_MSG_*` events are unregistered to avoid duplicates. No opt-in CVars are needed.
-- **SpellId icons**: SpellIds from combat log events resolve icons directly through ClassicAPI's `GetSpellInfo`, bypassing Babble-Spell dictionary lookups and tooltip scanning.
+- **Spell icons**: combat log events resolve icons from their SpellId with ClassicAPI's `C_Spell.GetSpellTexture`. Events with only a name fall back to the player's auras, spellbook and items; each name is looked up once.
 
 ### Removed: SuperWoW / UnitXP SP3 / Nampower
 
@@ -85,7 +85,6 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 
 - **Upvalue caching**: Frequently called standard library functions (`string.find`, `string.gsub`, `table.insert`, `table.getn`, `GetTime`, etc.) are cached as local variables
 - **Dispatch table**: Combat event routing uses O(1) table lookup instead of an if/elseif chain
-- **SpellId icon cache**: SpellIds from combat log events resolve icons directly through ClassicAPI and are cached, bypassing Babble-Spell dictionary lookups and tooltip scanning
 - **Unit event filtering**: `UNIT_HEALTH` (player, target, pet) and `UNIT_MANA` (player) use ClassicAPI's `RegisterUnitEvent`, so other units' updates never reach Lua
 - **Table pooling**: Animation event tables come from a ClassicAPI object pool (`CreateUnsecuredObjectPool`) and are reused, so 1.12's stop-the-world GC runs less often
 
@@ -115,11 +114,10 @@ WoW CHAT_MSG_* events (or ClassicAPI COMBAT_LOG_EVENT_UNFILTERED)
 
 - **AceLibrary** — Addon framework skeleton
 - **AceLocale-2.2** — Localization management
-- **Babble-Spell-2.2** — Spell name database for icon lookups (~10K lines)
 
 ### Saved Variables
 
-`MikSBT_Save` — Stores named profiles containing event settings, triggers, suppressions, display positions, and font settings. Profiles support versioning and migration between addon versions.
+`MikSBT_Save` — Stores named profiles containing event settings, triggers, suppressions, display positions, and font settings. On load, settings added in newer versions are filled into existing profiles from the defaults.
 
 ## Development
 

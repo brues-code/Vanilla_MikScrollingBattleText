@@ -15,7 +15,6 @@ local table_setn = table.setn
 local math_ceil, math_floor, math_random = math.ceil, math.floor, math.random
 local GetTime = GetTime
 local getglobal = getglobal
-local strlower = strlower
 local tonumber = tonumber
 local UnitClass = UnitClass
 
@@ -37,101 +36,21 @@ MikSBT.CurrentProfile = nil;
 -- Private constants.
 -------------------------------------------------------------------------------------
 
--- cache des icones trouvées par l'algo et des icones qu'il ne trouverait pas
-if not ICON_CACHE then
-	ICON_CACHE = {}
+-- Icons resolved from effect names, for events that carry no spell ID. A name with no icon
+-- is stored as false so the lookup runs once per name.
+local nameIconCache = {}
+
+-- Returns the icon for an effect name: an aura on the player, a spell in the player's or
+-- pet's spellbook, or an equipped or carried item.
+local function GetNameIcon(name)
+ local icon = nameIconCache[name];
+ if (icon == nil) then
+  local _, _, spellIcon = GetSpellInfo(name);
+  icon = MikSBT.GetAuraIcon(name) or spellIcon or MikSBT.FindItemIcon(name) or false;
+  nameIconCache[name] = icon;
+ end
+ return icon or nil;
 end
-ICON_CACHE["repousser au loin"] =				"Interface\\Icons\\Inv_Gauntlets_05"
-ICON_CACHE["rupture du sol"] =					"Interface\\Icons\\Spell_Nature_Earthquake"
-ICON_CACHE["rayon de l'oeil"] =					"Interface\\Icons\\Spell_Nature_Callstorm"
-ICON_CACHE["salve de traits de l'ombre"] =		"Interface\\Icons\\Spell_Shadow_Shadowbolt"
-ICON_CACHE["tempête d'ombre"] =					"Interface\\Icons\\spell_shadow_shadowbolt"
-ICON_CACHE["gaz"] =								"Interface\\Icons\\Spell_Nature_Abolishmagic"
-ICON_CACHE["décimer"] =							"Interface\\Icons\\Inv_Shield_01"
-ICON_CACHE["champ statique"] =					"Interface\\Icons\\Spell_Nature_WispHeal"
-ICON_CACHE["horion"] =							"Interface\\Icons\\Spell_Nature_WispHeal"
-ICON_CACHE["secousse"] =						"Interface\\Icons\\spell_nature_earthquake"
-ICON_CACHE["charge de bouclier"] =				"Interface\\Icons\\ability_warrior_charge"
-ICON_CACHE["eclair des arcanes"] =				"Interface\\Icons\\spell_arcane_starfire"
-ICON_CACHE["gémissement des âmes"] =			"Interface\\Icons\\spell_nature_lightning"
-ICON_CACHE["trait noir"] =						"Interface\\Icons\\spell_shadow_shadowbolt"
-ICON_CACHE["infusion de mana"] =				"Interface\\Icons\\inv_trinket_naxxramas01"
-ICON_CACHE["afflux"] =							"Interface\\Icons\\Ability_Warrior_Charge"
-ICON_CACHE["frappe"] =							"Interface\\Icons\\Ability_Rogue_Ambush"
-ICON_CACHE["souffle de lave"] =					"Interface\\Icons\\Spell_Fire_WindsOfWoe"
-ICON_CACHE["frappe des ailes"] =				"Interface\\Icons\\Inv_Misc_Monsterscales_14"
-ICON_CACHE["lance de flammes"] =				"Interface\\Icons\\Ability_Throw"
-ICON_CACHE["horion de l'ombre"] =				"Interface\\Icons\\Spell_Shadow_Shadowbolt"
-ICON_CACHE["explosion de lave"] =				"Interface\\Icons\\Spell_Fire_Volcano"
-ICON_CACHE["bouclier de lave"] =				"Interface\\Icons\\Spell_Fire_Immolation"
-ICON_CACHE["fleur de feu"] =					"Interface\\Icons\\Spell_Fire_Fireball02"
-ICON_CACHE["bombe"] =							"Interface\\Icons\\Spell_Fire_Selfdestruct"
-ICON_CACHE["explosion"] =						"Interface\\Icons\\Spell_Fire_Selfdestruct"
-ICON_CACHE["colère de ragnaros"] =				"Interface\\Icons\\Spell_Fire_Soulburn"
-ICON_CACHE["choc"] =							"Interface\\Icons\\Ability_Smash"
-ICON_CACHE["secousse violente"] =				"Interface\\Icons\\Ability_Smash"
-ICON_CACHE["nova de feu"] =						"Interface\\Icons\\Spell_Fire_SealOfFire"
-ICON_CACHE["marque de détonation"] =			"Interface\\Icons\\spell_fire_selfdestruct"
-ICON_CACHE["cône de feu"] =						"Interface\\Icons\\Spell_Fire_WindsOfWoe"
-ICON_CACHE["volée de boules de feu"] =			"Interface\\Icons\\Spell_Fire_Flamebolt"
-ICON_CACHE["vague de foudre"] =					"Interface\\Icons\\Spell_Nature_Chainlightning"
-ICON_CACHE["coup de queue"] =					"Interface\\Icons\\Inv_Misc_MonsterScales_05"
-ICON_CACHE["exploiter faiblesse"] =				"Interface\\Icons\\ability_backstab"
-ICON_CACHE["lancer feu liquide"] =				"Interface\\Icons\\spell_fire_meteorstorm"
-ICON_CACHE["poing de force"] =					"Interface\\Icons\\inv_gauntlets_31"
-ICON_CACHE["uppercut"] =						"Interface\\Icons\\inv_gauntlets_31"
-ICON_CACHE["sangsue"] =							"Interface\\Icons\\ability_racial_cannibalize"
-ICON_CACHE["choc de feu"] =						"Interface\\Icons\\spell_fire_immolation"
-ICON_CACHE["malédiction du sang"] =				"Interface\\Icons\\spell_shadow_ritualofsacrifice"
-ICON_CACHE["brasier"] =							"Interface\\Icons\\spell_fire_incinerate"
-ICON_CACHE["météore"] =							"Interface\\Icons\\spell_fire_meteorstorm"
-ICON_CACHE["jet de poison"] =					"Interface\\Icons\\spell_nature_corrosivebreath"
-ICON_CACHE["explosion d'ombre"] =				"Interface\\Icons\\spell_shadow_antishadow"
-ICON_CACHE["voile de l'ombre"] =				"Interface\\Icons\\spell_shadow_gathershadows"
-ICON_CACHE["nuée maléfique"] =					"Interface\\Icons\\spell_nature_abolishmagic"
-ICON_CACHE["crachat empoisonné"] =				"Interface\\Icons\\spell_nature_corrosivebreath"
-ICON_CACHE["piétiner"] =						"Interface\\Icons\\spell_nature_natureswrath"
-ICON_CACHE["spores mutées"] =					"Interface\\Icons\\spell_nature_abolishmagic"
-ICON_CACHE["heurtoir du vomisseur de bile"] =	"Interface\\Icons\\ability_devour"
-ICON_CACHE["eruption"] =						"Interface\\Icons\\spell_fire_volcano"
-ICON_CACHE["tempête de mana"] =					"Interface\\Icons\\spell_frost_icestorm"
-ICON_CACHE["frappe sacrée"] =					"Interface\\Icons\\ability_thunderbolt"
-ICON_CACHE["grondement du tonnerre"] =			"Interface\\Icons\\spell_nature_thunderclap"
-ICON_CACHE["déflagration des arcanes"] =		"Interface\\Icons\\spell_shadow_deathpact"
-ICON_CACHE["nuage pestilentiel"] =				"Interface\\Icons\\spell_nature_abolishmagic"
-ICON_CACHE["régénération de mana"] =			"Interface\\Icons\\spell_nature_manaregentotem"
-ICON_CACHE["potion de soins"] =					"Interface\\Icons\\inv_potion_54"
-ICON_CACHE["restauration du mana"] =			"Interface\\Icons\\inv_potion_76"
-ICON_CACHE["rune démoniaque"] =					"Interface\\Icons\\inv_misc_rune_04"
-ICON_CACHE["rune ténébreuse"] =					"Interface\\Icons\\spell_shadow_sealofkings"
-ICON_CACHE["absorption de magie"] =				"Interface\\Icons\\spell_nature_astralrecalgroup"
-ICON_CACHE["gel"] =								"Interface\\Icons\\spell_frost_glacier"
-ICON_CACHE["lésions cérébrales"] =				"Interface\\Icons\\ability_gouge"
-ICON_CACHE["décharge électrique"] =				"Interface\\Icons\\spell_lightning_lightningbolt01"
-ICON_CACHE["foudre"] =							"Interface\\Icons\\spell_lightning_lightningbolt01"
-ICON_CACHE["enchantement flamboyant"] =			"Interface\\Icons\\spell_fire_selfdestruct"
-ICON_CACHE["pierre de soins supérieure"] =		"Interface\\Icons\\inv_stone_04"
-ICON_CACHE["pierre de soins mineure"] =			"Interface\\Icons\\inv_stone_04"
-ICON_CACHE["pierre de soins inférieure"] =		"Interface\\Icons\\inv_stone_04"
-ICON_CACHE["pierre de soins majeure"] =			"Interface\\Icons\\inv_stone_04"
-ICON_CACHE["pierre de soins"] =					"Interface\\Icons\\inv_stone_04"
-ICON_CACHE["capturer un esprit"] =				"Interface\\Icons\\Spell_Shadow_Haunting"
-ICON_CACHE["récupération du mana"] =			"Interface\\Icons\\inv_misc_gem_ruby_01"
-ICON_CACHE["maître des éléments"] =				"Interface\\Icons\\spell_fire_masterofelements"
-ICON_CACHE["tribu zandalar"] =					"Interface\\Icons\\inv_misc_coin_08"
-ICON_CACHE["crachat venimeux"] =				"Interface\\Icons\\spell_nature_corrosivebreath"
-ICON_CACHE["morsure fatale"] =					"Interface\\Icons\\ability_backstab"
-ICON_CACHE["explosion sonore"] =				"Interface\\Icons\\spell_shadow_teleport"
-ICON_CACHE["flammes"] =							"Interface\\Icons\\spell_fire_fire"
-ICON_CACHE["effet inferno"] =					"Interface\\Icons\\spell_fire_incinerate"
-ICON_CACHE["flametongue attack"] = 				"Interface\\Icons\\Spell_Nature_GuardianWard"
-ICON_CACHE["stratholme holy water"] = 			"Interface\\Icons\\Inv_Potion_75"
-
--- Cache des spells dont l'icone n'a pas été trouvée
-NO_ICON_CACHE = {}
-
--- Cache for spellId-based icon lookups (bypasses Babble-Spell and tooltip scanning).
-local spellIdIconCache = {}
 
 -- Damage type → {r, g, b} float lookup for SetTextColor (lazily initialized).
 local damageTypeFontColors
@@ -1658,46 +1577,13 @@ function MikSBT.AddAnimation(animationEvent)
   animDisplayInfo.FontObject:SetFont("Fonts\\FRIZQT__.TTF", fontSize-1, animDisplayInfo.FontOutline);
  end
  animDisplayInfo.FontObject:SetTextColor(animDisplayInfo.ColorR, animDisplayInfo.ColorG, animDisplayInfo.ColorB);
- -- Athene Edit - Spell Icon
- local texture
- if animationEvent.Texture then texture = animationEvent.Texture end
-
- -- SpellId-based icon lookup (fast path, bypasses Babble-Spell and tooltip scanning).
- if not texture and animationEvent.SpellId then
-  local sid = animationEvent.SpellId
-  if spellIdIconCache[sid] then
-   texture = spellIdIconCache[sid]
-  elseif GetSpellInfo then
-   local ok, _, _, tex = pcall(GetSpellInfo, sid)
-   if ok and tex then texture = tex; spellIdIconCache[sid] = tex end
-  end
+ -- Spell icon: the trigger's own texture, else the event's spell ID, else its effect name.
+ local texture = animationEvent.Texture
+ if (not texture and animationEvent.SpellId) then
+  texture = C_Spell.GetSpellTexture(animationEvent.SpellId);
  end
-
- if animationEvent.EffectName then
-	 local name = string_gsub(animationEvent.EffectName, " %(%d+%)", "")
-   local lowerName = strlower(name)
-	 -- DEFAULT_CHAT_FRAME:AddMessage(animationEvent.EffectName)
-	 -- DEFAULT_CHAT_FRAME:AddMessage(name)
-	 if ICON_CACHE[lowerName] then
-		texture = ICON_CACHE[lowerName]
-	 elseif not texture and MikSBT.GetAuraIcon(name) then
-		texture = MikSBT.GetAuraIcon(name)
-		ICON_CACHE[lowerName] = texture
-	 elseif not texture and GetSpellInfo then
-		local ok, sid = pcall(function(n) return select(10, GetSpellInfo(n)) end, name)
-		if ok and sid and sid ~= 0 then
-			local ok2, _, _, tex = pcall(GetSpellInfo, sid)
-			if ok2 and tex then texture = tex; ICON_CACHE[lowerName] = tex end
-		end
-	 elseif not texture then
-		local itemIcon = MikSBT.FindItemIcon(lowerName)
-		if itemIcon then
-			texture = itemIcon
-			ICON_CACHE[lowerName] = itemIcon
-		else
-			NO_ICON_CACHE[lowerName] = 1
-		end
-	 end
+ if (not texture and animationEvent.EffectName) then
+  texture = GetNameIcon((string_gsub(animationEvent.EffectName, " %(%d+%)", "")));
  end
  
  -- Prefix the icon as an inline texture sized to the font height and cropped to the icon border.
