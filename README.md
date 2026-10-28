@@ -86,7 +86,7 @@ SuperWoW, UnitXP SP3 and Nampower integration has been removed in favor of Class
 - **Upvalue caching**: Frequently called standard library functions (`string.find`, `string.gsub`, `table.insert`, `table.getn`, `GetTime`, etc.) are cached as local variables
 - **Dispatch table**: Combat event routing uses O(1) table lookup instead of an if/elseif chain
 - **SpellId icon cache**: SpellIds from combat log events resolve icons directly through ClassicAPI and are cached, bypassing Babble-Spell dictionary lookups and tooltip scanning
-- **Event throttling**: UNIT_HEALTH and UNIT_MANA trigger checks are throttled to 150ms intervals
+- **Unit event filtering**: `UNIT_HEALTH` (player, target, pet) and `UNIT_MANA` (player) use ClassicAPI's `RegisterUnitEvent`, so other units' updates never reach Lua
 - **Table pooling**: Animation event tables come from a ClassicAPI object pool (`CreateUnsecuredObjectPool`) and are reused, so 1.12's stop-the-world GC runs less often
 
 ## Architecture

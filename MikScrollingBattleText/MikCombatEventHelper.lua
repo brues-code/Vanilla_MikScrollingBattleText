@@ -190,10 +190,6 @@ local combatlogDeathsActive = false
 -- Cached player GUID for combat log event handlers (set in Init via ClassicAPI's UnitGUID).
 local playerGUID = nil
 
--- Event throttling for trigger checks.
-local TRIGGER_THROTTLE_INTERVAL = 0.15
-local lastTriggerCheckTime = 0
-
 -- Combat log event frame and dispatch table (initialized in SetupCombatLogEvents).
 local combatLogEventFrame = nil
 local combatLogHandlers = {}
@@ -240,7 +236,11 @@ function MikCEH.RegisterEvents()
  -- Register the events we are interested in receiving.
  for k, v in listenEvents do
   MCEHEventFrame:RegisterEvent(v);
- end 
+ end
+
+ -- Unit events only for the units the triggers watch, so raid members' updates never reach Lua.
+ MCEHEventFrame:RegisterUnitEvent("UNIT_HEALTH", "player", "target", "pet");
+ MCEHEventFrame:RegisterUnitEvent("UNIT_MANA", "player");
 end
 
 
@@ -251,7 +251,10 @@ function MikCEH.UnregisterEvents()
  -- Register the events we are interested in receiving.
  for k, v in listenEvents do
   MCEHEventFrame:UnregisterEvent(v);
- end 
+ end
+
+ MCEHEventFrame:UnregisterEvent("UNIT_HEALTH");
+ MCEHEventFrame:UnregisterEvent("UNIT_MANA");
 end
 
 
@@ -302,8 +305,6 @@ function MikCEH.OnLoad()
  table_insert(listenEvents, "PLAYER_REGEN_ENABLED");					-- Leave Combat
  table_insert(listenEvents, "PLAYER_REGEN_DISABLED");					-- Enter Combat
  table_insert(listenEvents, "PLAYER_COMBO_POINTS");					-- Combo Point Gains
- table_insert(listenEvents, "UNIT_HEALTH");						-- Health changes.
- table_insert(listenEvents, "UNIT_MANA");							-- Mana changes.
 
  table_insert(listenEvents, "PLAYER_TARGET_CHANGED");					-- Target changes.
  table_insert(listenEvents, "RAID_ROSTER_UPDATE");					-- Roster cache invalidation.
@@ -362,33 +363,23 @@ function MikCEH.OnEvent()
    MikCEH.SendEvent(eventData);
   end
 
- -- Health changes (throttled to reduce CPU in heavy combat)
+ -- Health changes (registered for player, target and pet only).
  elseif (event == "UNIT_HEALTH") then
-  local now = GetTime()
-  if (now - lastTriggerCheckTime >= TRIGGER_THROTTLE_INTERVAL) then
-   lastTriggerCheckTime = now
-   if (arg1 == "player") then
-    MikCEH.ParseSelfHealthTriggers();
-   elseif (arg1 == "target") then
-    if (not UnitIsFriend("player", "target")) then
-     MikCEH.ParseEnemyHealthTriggers();
-    else
-     MikCEH.ParseFriendlyHealthTriggers();
-    end
-   elseif (arg1 == "pet") then
-    MikCEH.ParsePetHealthTriggers();
+  if (arg1 == "player") then
+   MikCEH.ParseSelfHealthTriggers();
+  elseif (arg1 == "target") then
+   if (not UnitIsFriend("player", "target")) then
+    MikCEH.ParseEnemyHealthTriggers();
+   else
+    MikCEH.ParseFriendlyHealthTriggers();
    end
+  elseif (arg1 == "pet") then
+   MikCEH.ParsePetHealthTriggers();
   end
 
- -- Mana changes (throttled)
+ -- Mana changes (registered for player only).
  elseif (event == "UNIT_MANA") then
-  local now = GetTime()
-  if (now - lastTriggerCheckTime >= TRIGGER_THROTTLE_INTERVAL) then
-   lastTriggerCheckTime = now
-   if (arg1 == "player") then
-    MikCEH.ParseSelfManaTriggers();
-   end
-  end
+  MikCEH.ParseSelfManaTriggers();
 
  -- Roster changes — invalidate name→unitID cache.
  elseif (event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED") then
